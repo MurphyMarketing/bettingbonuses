@@ -57,10 +57,16 @@ Commit: `Add core dependencies (Drizzle, Auth.js, shadcn/ui, Zod)`.
 
 ## Step 3 — Environment configuration
 
-Create `.env.local` (gitignored) with the Kinsta DB connection. Template:
+Create `.env.local` (gitignored) with the Supabase Postgres connection. Two
+Postgres URLs are required (Supabase exposes both): `DATABASE_URL` points at the
+transaction pooler (port 6543) for runtime queries, and `DIRECT_URL` points at
+the direct session connection (port 5432) for migrations/drizzle-kit. Template:
 
 ```
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require"
+# Transaction pooler (port 6543) — runtime queries, read by src/db/index.ts
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:6543/DBNAME?sslmode=require"
+# Direct connection (port 5432) — migrations only, read by drizzle.config.ts
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"
 NEXTAUTH_SECRET="<generate with: openssl rand -base64 32>"
 NEXTAUTH_URL="http://localhost:3000"
 ```
@@ -85,12 +91,18 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-const client = postgres(process.env.DATABASE_URL!, { max: 10 });
+// Runtime uses the Supabase transaction pooler (DATABASE_URL, port 6543).
+// PgBouncer in transaction mode doesn't support prepared statements, so
+// disable them with prepare: false.
+const client = postgres(process.env.DATABASE_URL!, { max: 10, prepare: false });
 export const db = drizzle(client, { schema });
 ```
 
 - Create `drizzle.config.ts` at the project root pointing at
   `src/db/schema.ts` with `out: './drizzle'` and the dialect set to postgresql.
+  Its `dbCredentials.url` must read `DIRECT_URL` (the Supabase direct connection
+  on port 5432) — drizzle-kit schema diffing needs a non-pooled session
+  connection, not the transaction pooler.
 - Add npm scripts to `package.json`:
   ```
   "db:generate": "drizzle-kit generate",
