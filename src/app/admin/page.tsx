@@ -32,6 +32,9 @@ export default async function AdminHome() {
         <Link href="/admin/articles" className="text-sm font-medium text-primary hover:underline">
           Articles →
         </Link>
+        <Link href="/admin/content-status" className="text-sm font-medium text-primary hover:underline">
+          Content status →
+        </Link>
       </nav>
 
       <form
