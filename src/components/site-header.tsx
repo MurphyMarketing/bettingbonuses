@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Menu, X } from 'lucide-react';
+import { SiteSearch, MobileSearch } from '@/components/search/site-search';
 
 const NAV = [
   { label: 'Sportsbooks', href: '/sportsbooks/promo-codes' },
@@ -12,22 +12,6 @@ const NAV = [
   { label: 'DFS', href: '/dfs/promo-codes' },
   { label: 'States', href: '/states' },
 ];
-
-// Non-functional placeholder — the search UI affordance only (no backend yet).
-function SearchBox({ id }: { id: string }) {
-  return (
-    <div className="relative">
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        id={id}
-        type="search"
-        aria-label="Search"
-        placeholder="Search offers, brands, states…"
-        className="pl-8"
-      />
-    </div>
-  );
-}
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -52,25 +36,26 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto hidden w-64 md:block">
-          <SearchBox id="site-search-desktop" />
+          <SiteSearch />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle navigation menu"
-          aria-expanded={open}
-          className="ml-auto inline-flex size-9 items-center justify-center rounded-md border md:hidden"
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        {/* Mobile: search overlay trigger + hamburger */}
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          <MobileSearch />
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={open}
+            className="inline-flex size-9 items-center justify-center rounded-md border"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
       {open ? (
         <div className="border-t px-4 py-4 sm:px-6 md:hidden">
-          <div className="mb-4">
-            <SearchBox id="site-search-mobile" />
-          </div>
           <nav className="flex flex-col gap-1">
             {NAV.map((item) => (
               <Link

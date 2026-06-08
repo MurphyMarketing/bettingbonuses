@@ -1,0 +1,6 @@
+ALTER TABLE "articles" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(regexp_replace(body, '<[^>]+>', ' ', 'g'),''))) STORED;--> statement-breakpoint
+ALTER TABLE "authors" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (to_tsvector('english', coalesce(name,'') || ' ' || coalesce(title,'') || ' ' || coalesce(bio,'') || ' ' || coalesce(credentials,''))) STORED;--> statement-breakpoint
+ALTER TABLE "brands" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (to_tsvector('english', coalesce(name,'') || ' ' || coalesce(slug,'') || ' ' || coalesce(short_description,'') || ' ' || coalesce(full_description,'') || ' ' || coalesce(intro_paragraph,'') || ' ' || coalesce(verdict,''))) STORED;--> statement-breakpoint
+CREATE INDEX "articles_search_idx" ON "articles" USING gin ("search_vector");--> statement-breakpoint
+CREATE INDEX "authors_search_idx" ON "authors" USING gin ("search_vector");--> statement-breakpoint
+CREATE INDEX "brands_search_idx" ON "brands" USING gin ("search_vector");

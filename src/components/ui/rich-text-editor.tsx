@@ -9,6 +9,7 @@ import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
+import { InternalLink } from './internal-link-extension';
 import {
   Bold, Italic, Heading2, Heading3, List, ListOrdered, Link as LinkIcon,
   Quote, Code, Code2, Image as ImageIcon, Table as TableIcon, Undo, Redo, Code as CodeBlockIcon,
@@ -102,6 +103,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
       TableRow,
       TableHeader,
       TableCell,
+      InternalLink,
     ],
     content: defaultValue || '',
     editorProps: { attributes: { class: CONTENT_CLASS } },

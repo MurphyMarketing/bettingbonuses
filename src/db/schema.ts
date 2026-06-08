@@ -12,9 +12,12 @@
  */
 import {
   pgTable, pgEnum, serial, text, varchar, timestamp, boolean,
-  integer, jsonb, uniqueIndex, index, primaryKey,
+  integer, jsonb, uniqueIndex, index, primaryKey, customType,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
+
+// Postgres full-text search vector (generated STORED columns; see brands/articles/authors).
+const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' });
 
 /* ============================================================
  * ENUMS — controlled vocabularies
@@ -133,9 +136,13 @@ export const brands = pgTable('brands', {
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  searchVector: tsvector('search_vector').generatedAlwaysAs(
+    sql`to_tsvector('english', coalesce(name,'') || ' ' || coalesce(slug,'') || ' ' || coalesce(short_description,'') || ' ' || coalesce(full_description,'') || ' ' || coalesce(intro_paragraph,'') || ' ' || coalesce(verdict,''))`,
+  ),
 }, (table) => ({
   categoryIdx: index('brands_category_idx').on(table.category),
   statusIdx: index('brands_status_idx').on(table.status),
+  searchIdx: index('brands_search_idx').using('gin', table.searchVector),
 }));
 
 /* ============================================================
@@ -383,7 +390,12 @@ export const authors = pgTable('authors', {
   displayOrder: integer('display_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+  searchVector: tsvector('search_vector').generatedAlwaysAs(
+    sql`to_tsvector('english', coalesce(name,'') || ' ' || coalesce(title,'') || ' ' || coalesce(bio,'') || ' ' || coalesce(credentials,''))`,
+  ),
+}, (table) => ({
+  searchIdx: index('authors_search_idx').using('gin', table.searchVector),
+}));
 
 /* ============================================================
  * ARTICLES — editorial content (guides, news, comparisons).
@@ -408,9 +420,13 @@ export const articles = pgTable('articles', {
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  searchVector: tsvector('search_vector').generatedAlwaysAs(
+    sql`to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(regexp_replace(body, '<[^>]+>', ' ', 'g'),''))`,
+  ),
 }, (table) => ({
   statusIdx: index('articles_status_idx').on(table.status),
   categoryIdx: index('articles_category_idx').on(table.category),
+  searchIdx: index('articles_search_idx').using('gin', table.searchVector),
 }));
 
 /* ============================================================
