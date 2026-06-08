@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { auth, signOut } from '@/auth';
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +18,12 @@ export default async function AdminHome() {
       <p className="mt-2 text-muted-foreground">
         Signed in as {session?.user?.email ?? 'unknown user'}.
       </p>
+
+      <nav className="mt-6 flex gap-4">
+        <Link href="/admin/brands" className="text-sm font-medium text-primary hover:underline">
+          Brands →
+        </Link>
+      </nav>
 
       <form
         className="mt-6"

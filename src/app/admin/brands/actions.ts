@@ -1,0 +1,158 @@
+'use server';
+
+import { and, eq, ne } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { db } from '@/db';
+import { brands, companies } from '@/db/schema';
+import { isValidSlug, slugify } from '@/lib/slug';
+import {
+  brandSchema,
+  brandFormToRaw,
+  toFieldErrors,
+  type BrandFormState,
+  type BrandInput,
+} from './schema';
+
+/** Shared field -> column mapping for insert/update. */
+function toColumns(data: BrandInput, slug: string) {
+  return {
+    name: data.name,
+    slug,
+    category: data.category,
+    status: data.status,
+    companyId: data.companyId ?? null,
+    rebrandedFromId: data.rebrandedFromId ?? null,
+    countryCode: data.countryCode,
+    websiteUrl: data.websiteUrl ?? null,
+    appStoreUrl: data.appStoreUrl ?? null,
+    playStoreUrl: data.playStoreUrl ?? null,
+    logoUrl: data.logoUrl ?? null,
+    logoSquareUrl: data.logoSquareUrl ?? null,
+    affiliateProgram: data.affiliateProgram ?? null,
+    defaultAffiliateLink: data.defaultAffiliateLink ?? null,
+    shortDescription: data.shortDescription ?? null,
+    fullDescription: data.fullDescription ?? null,
+    yearFounded: data.yearFounded ?? null,
+    launchDate: data.launchDate ?? null,
+    sunsetDate: data.sunsetDate ?? null,
+    notes: data.notes ?? null,
+  };
+}
+
+/** Validate referenced company/rebranded-from rows. `selfId` is the brand being
+ *  edited (so it can't be its own predecessor); undefined on create. */
+async function checkReferences(
+  data: BrandInput,
+  selfId?: number,
+): Promise<Record<string, string[]> | null> {
+  const errors: Record<string, string[]> = {};
+
+  if (data.companyId != null) {
+    const [c] = await db
+      .select({ id: companies.id })
+      .from(companies)
+      .where(eq(companies.id, data.companyId))
+      .limit(1);
+    if (!c) errors.companyId = ['Selected company no longer exists'];
+  }
+
+  if (data.rebrandedFromId != null) {
+    if (selfId != null && data.rebrandedFromId === selfId) {
+      errors.rebrandedFromId = ['A brand cannot be rebranded from itself'];
+    } else {
+      const [b] = await db
+        .select({ id: brands.id, status: brands.status })
+        .from(brands)
+        .where(eq(brands.id, data.rebrandedFromId))
+        .limit(1);
+      if (!b) errors.rebrandedFromId = ['Selected brand no longer exists'];
+      else if (b.status === 'planned') {
+        errors.rebrandedFromId = ['Cannot rebrand from a planned brand'];
+      }
+    }
+  }
+
+  return Object.keys(errors).length ? errors : null;
+}
+
+/** Resolve the final slug (explicit or derived) and check uniqueness.
+ *  Returns the slug, or field errors. `excludeId` skips the row being edited. */
+async function resolveSlug(
+  data: BrandInput,
+  excludeId?: number,
+): Promise<{ slug: string } | { errors: Record<string, string[]> }> {
+  const slug = data.slug ?? slugify(data.name);
+  if (!slug || !isValidSlug(slug)) {
+    return { errors: { slug: ['Could not derive a valid slug from the name — enter one manually'] } };
+  }
+  const where = excludeId
+    ? and(eq(brands.slug, slug), ne(brands.id, excludeId))
+    : eq(brands.slug, slug);
+  const [clash] = await db.select({ id: brands.id }).from(brands).where(where).limit(1);
+  if (clash) return { errors: { slug: ['That slug is already in use'] } };
+  return { slug };
+}
+
+export async function createBrand(
+  _prev: BrandFormState,
+  formData: FormData,
+): Promise<BrandFormState> {
+  const parsed = brandSchema.safeParse(brandFormToRaw(formData));
+  if (!parsed.success) return { errors: toFieldErrors(parsed.error) };
+  const data = parsed.data;
+
+  const slugResult = await resolveSlug(data);
+  if ('errors' in slugResult) return slugResult;
+
+  const refErrors = await checkReferences(data);
+  if (refErrors) return { errors: refErrors };
+
+  try {
+    await db.insert(brands).values(toColumns(data, slugResult.slug));
+  } catch {
+    return { errors: { _form: ['Could not save the brand. Please try again.'] } };
+  }
+
+  revalidatePath('/admin/brands');
+  redirect('/admin/brands');
+}
+
+export async function updateBrand(
+  id: number,
+  _prev: BrandFormState,
+  formData: FormData,
+): Promise<BrandFormState> {
+  const parsed = brandSchema.safeParse(brandFormToRaw(formData));
+  if (!parsed.success) return { errors: toFieldErrors(parsed.error) };
+  const data = parsed.data;
+
+  const slugResult = await resolveSlug(data, id);
+  if ('errors' in slugResult) return slugResult;
+
+  const refErrors = await checkReferences(data, id);
+  if (refErrors) return { errors: refErrors };
+
+  try {
+    await db
+      .update(brands)
+      .set({ ...toColumns(data, slugResult.slug), updatedAt: new Date() })
+      .where(eq(brands.id, id));
+  } catch {
+    return { errors: { _form: ['Could not save the brand. Please try again.'] } };
+  }
+
+  revalidatePath('/admin/brands');
+  revalidatePath(`/admin/brands/${id}/edit`);
+  redirect('/admin/brands');
+}
+
+/** Soft delete: brands are never hard-deleted; we move them to 'sunset'. */
+export async function softDeleteBrand(id: number): Promise<void> {
+  await db
+    .update(brands)
+    .set({ status: 'sunset', updatedAt: new Date() })
+    .where(eq(brands.id, id));
+  revalidatePath('/admin/brands');
+  redirect('/admin/brands');
+}
