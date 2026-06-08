@@ -1,7 +1,5 @@
 'use server';
 
-import { writeFile, mkdir } from 'node:fs/promises';
-import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -9,6 +7,7 @@ import { db } from '@/db';
 import { brands, companies, authors } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
 import { slugTaken } from '@/lib/slug-check';
+import { getStorage, logoPublicUrl, LOGO_BUCKET } from '@/lib/storage';
 import {
   brandSchema,
   brandFormToRaw,
@@ -190,10 +189,10 @@ const LOGO_MIME_EXT: Record<string, string> = {
 };
 
 /**
- * Save uploaded logo file(s) to /public/logos and point the brand at them.
- * Files are named by brand slug so they overwrite on re-upload. Writes to the
- * repo's public/ dir — fine in local/dev (then commit the asset); note that a
- * read-only/ephemeral host filesystem won't persist runtime uploads.
+ * Upload logo file(s) to Supabase Storage (brand-logos bucket) and point the
+ * brand at the public URLs. Objects are named by brand slug (upsert) so they
+ * overwrite on re-upload. Storage persists across deploys (unlike the old
+ * /public writes on an ephemeral host filesystem).
  */
 export async function uploadBrandLogo(
   id: number,
@@ -209,7 +208,7 @@ export async function uploadBrandLogo(
   ];
 
   const updates: Partial<Record<'logoUrl' | 'logoSquareUrl', string>> = {};
-  const dir = path.join(process.cwd(), 'public', 'logos');
+  const storage = getStorage();
 
   for (const { input, column, suffix } of fields) {
     const file = formData.get(input);
@@ -223,10 +222,15 @@ export async function uploadBrandLogo(
       return { error: `${input === 'logo' ? 'Logo' : 'Square logo'} must be SVG, PNG, or WebP.` };
     }
 
-    const filename = `${brand.slug}${suffix}.${ext}`;
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
-    updates[column] = `/logos/${filename}`;
+    const objectPath = `${brand.slug}${suffix}.${ext}`;
+    const { error } = await storage
+      .from(LOGO_BUCKET)
+      .upload(objectPath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true });
+    if (error) {
+      return { error: `Upload failed: ${error.message}` };
+    }
+    // Cache-bust the public URL so an overwrite is reflected immediately.
+    updates[column] = `${logoPublicUrl(objectPath)}?v=${Date.now()}`;
   }
 
   if (Object.keys(updates).length === 0) {

@@ -35,6 +35,12 @@ export default async function AdminHome() {
         <Link href="/admin/content-status" className="text-sm font-medium text-primary hover:underline">
           Content status →
         </Link>
+        <Link href="/admin/affiliate-links" className="text-sm font-medium text-primary hover:underline">
+          Affiliate links →
+        </Link>
+        <Link href="/admin/redirects" className="text-sm font-medium text-primary hover:underline">
+          Redirects →
+        </Link>
       </nav>
 
       <form

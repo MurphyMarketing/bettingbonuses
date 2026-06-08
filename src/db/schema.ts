@@ -407,6 +407,21 @@ export const articles = pgTable('articles', {
 }));
 
 /* ============================================================
+ * REDIRECTS — 301/302 map for the WordPress -> Next cutover. Checked in the
+ * proxy on every request (cached in-memory with a short TTL).
+ * ========================================================== */
+export const redirects = pgTable('redirects', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  fromPath: text('from_path').unique().notNull(),              // e.g. "/racing/tvg/"
+  toPath: text('to_path').notNull(),                           // path "/fanduel-racing/" or full URL
+  statusCode: integer('status_code').notNull().default(301),
+  isActive: boolean('is_active').notNull().default(true),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/* ============================================================
  * RELATIONS — Drizzle's relation helpers for type-safe joins
  * ========================================================== */
 export const companiesRelations = relations(companies, ({ many }) => ({
