@@ -22,7 +22,7 @@ When prompted about overwriting `CLAUDE.md`, `PHASE1_PLAN.md`, or `db/schema.ts`
 **say no** — those files are project context and must be preserved.
 
 After scaffold:
-- Confirm `app/`, `src/`, `tailwind.config.ts`, `tsconfig.json` exist
+- Confirm `src/app/`, `src/`, `tsconfig.json` exist. (Note: with `--src-dir` the app router lives at `src/app/`. Tailwind v4 — installed by `create-next-app@latest` — uses CSS-based config in `src/app/globals.css` and a PostCSS plugin, so there is no `tailwind.config.ts`. This is expected.)
 - Run `npm run dev` and confirm the Next.js placeholder loads at
   `http://localhost:3000`
 - Stop the dev server, commit: `git add -A && git commit -m "Initial Next.js scaffold"`
