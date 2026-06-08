@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { SortableArrayField } from '@/components/ui/sortable-array-field';
 import { slugify } from '@/lib/slug';
 import type { AuthorFormState } from './schema';
 
@@ -14,10 +16,18 @@ export type AuthorFormValues = {
   title: string;
   credentials: string;
   bio: string;
-  avatarUrl: string;
+  fullBio: string;
+  linkedinUrl: string;
+  twitterUrl: string;
+  websiteUrl: string;
+  email: string;
+  expertiseAreas: string; // newline-joined
+  yearsExperience: string;
   isActive: boolean;
   displayOrder: string;
 };
+
+const toLines = (v: string): string[] => v.split('\n').map((s) => s.trim()).filter(Boolean);
 
 function Field({ label, htmlFor, errors, children, hint }: { label: string; htmlFor?: string; errors?: string[]; children: ReactNode; hint?: string }) {
   return (
@@ -56,11 +66,11 @@ export function AuthorForm({
         <Field label="Slug" htmlFor="slug" errors={errs.slug} hint="Used at /authors/[slug].">
           <Input id="slug" name="slug" value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} />
         </Field>
-        <Field label="Title" htmlFor="title" errors={errs.title} hint="e.g. Co-founder, BettingBonuses.com">
+        <Field label="Position title" htmlFor="title" errors={errs.title} hint="e.g. Co-founder, BettingBonuses.com">
           <Input id="title" name="title" defaultValue={values.title} />
         </Field>
-        <Field label="Avatar URL" htmlFor="avatarUrl" errors={errs.avatarUrl}>
-          <Input id="avatarUrl" name="avatarUrl" type="url" defaultValue={values.avatarUrl} />
+        <Field label="Industry start year" htmlFor="yearsExperience" errors={errs.yearsExperience} hint="e.g. 2008 — the page computes “X years experience”.">
+          <Input id="yearsExperience" name="yearsExperience" type="number" inputMode="numeric" defaultValue={values.yearsExperience} />
         </Field>
         <Field label="Display order" htmlFor="displayOrder" errors={errs.displayOrder}>
           <Input id="displayOrder" name="displayOrder" type="number" inputMode="numeric" defaultValue={values.displayOrder} />
@@ -71,9 +81,33 @@ export function AuthorForm({
         <Input id="credentials" name="credentials" defaultValue={values.credentials} />
       </Field>
 
-      <Field label="Bio (Markdown)" htmlFor="bio" errors={errs.bio}>
-        <Textarea id="bio" name="bio" rows={6} defaultValue={values.bio} />
+      {/* Social / contact */}
+      <section className="grid grid-cols-1 gap-4 rounded-lg border p-4 sm:grid-cols-2">
+        <Field label="LinkedIn URL" htmlFor="linkedinUrl" errors={errs.linkedinUrl}>
+          <Input id="linkedinUrl" name="linkedinUrl" type="url" defaultValue={values.linkedinUrl} />
+        </Field>
+        <Field label="X / Twitter URL" htmlFor="twitterUrl" errors={errs.twitterUrl}>
+          <Input id="twitterUrl" name="twitterUrl" type="url" defaultValue={values.twitterUrl} />
+        </Field>
+        <Field label="Website URL" htmlFor="websiteUrl" errors={errs.websiteUrl}>
+          <Input id="websiteUrl" name="websiteUrl" type="url" defaultValue={values.websiteUrl} />
+        </Field>
+        <Field label="Public email" htmlFor="email" errors={errs.email}>
+          <Input id="email" name="email" type="email" defaultValue={values.email} />
+        </Field>
+      </section>
+
+      <SortableArrayField name="expertiseAreas" label="Expertise areas" hint="One per line; drag to reorder." initial={toLines(values.expertiseAreas)} />
+
+      <Field label="Short bio" htmlFor="bio" errors={errs.bio} hint="Plain text used on bylines.">
+        <Textarea id="bio" name="bio" rows={3} defaultValue={values.bio} />
       </Field>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Full bio</Label>
+        <p className="text-xs text-muted-foreground">Long-form bio shown on the author page.</p>
+        <RichTextEditor name="fullBio" defaultValue={values.fullBio} placeholder="Full author bio…" />
+      </div>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="isActive" defaultChecked={values.isActive} className="size-4" />

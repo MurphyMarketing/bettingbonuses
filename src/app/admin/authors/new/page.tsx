@@ -7,7 +7,9 @@ export const metadata: Metadata = { title: 'New author', robots: { index: false,
 export const dynamic = 'force-dynamic';
 
 const EMPTY: AuthorFormValues = {
-  name: '', slug: '', title: '', credentials: '', bio: '', avatarUrl: '', isActive: true, displayOrder: '0',
+  name: '', slug: '', title: '', credentials: '', bio: '', fullBio: '',
+  linkedinUrl: '', twitterUrl: '', websiteUrl: '', email: '', expertiseAreas: '', yearsExperience: '',
+  isActive: true, displayOrder: '0',
 };
 
 export default function NewAuthorPage() {

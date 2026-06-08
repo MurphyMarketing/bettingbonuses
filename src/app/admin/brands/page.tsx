@@ -28,7 +28,7 @@ export default async function BrandsListPage() {
       status: brands.status,
       companyName: companies.name,
       regionCount: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${brands.id})`,
-      offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${brands.id})`,
+      offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${sql.raw('"brands"."id"')})`,
     })
     .from(brands)
     .leftJoin(companies, eq(brands.companyId, companies.id))

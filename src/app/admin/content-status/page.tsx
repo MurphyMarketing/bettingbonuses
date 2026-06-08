@@ -29,7 +29,7 @@ function Count({ n }: { n: number }) {
 }
 
 export default async function ContentStatusPage() {
-  const [brandRows, articleRows, stateRows] = await Promise.all([
+  const [brandRows, articleRows, stateRows, authorRows] = await Promise.all([
     db
       .select({
         id: brands.id,
@@ -44,7 +44,7 @@ export default async function ContentStatusPage() {
         otherPromotions: brands.otherPromotions,
         depositOptions: brands.depositOptions,
         primaryAuthorId: brands.primaryAuthorId,
-        offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${brands.id} and ${offers.status} = 'active')`,
+        offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${sql.raw('"brands"."id"')} and ${offers.status} = 'active')`,
         statesTotal: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${brands.id})`,
         statesWithContext: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${brands.id} and ${brandRegions.context} is not null)`,
       })
@@ -72,7 +72,24 @@ export default async function ContentStatusPage() {
       })
       .from(regions)
       .orderBy(asc(regions.name)),
+    db
+      .select({
+        name: authors.name,
+        slug: authors.slug,
+        avatarUrl: authors.avatarUrl,
+        fullBio: authors.fullBio,
+        yearsExperience: authors.yearsExperience,
+        socialCount: sql<number>`((${authors.linkedinUrl} is not null)::int + (${authors.twitterUrl} is not null)::int + (${authors.websiteUrl} is not null)::int + (${authors.email} is not null)::int)`,
+      })
+      .from(authors)
+      .orderBy(asc(authors.displayOrder), asc(authors.name)),
   ]);
+
+  const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0);
+  const authorTotal = authorRows.length;
+  const withAvatar = authorRows.filter((a) => a.avatarUrl).length;
+  const withFullBio = authorRows.filter((a) => a.fullBio).length;
+  const withSocial = authorRows.filter((a) => a.socialCount > 0).length;
 
   const len = (a: string[] | null) => (a ? a.length : 0);
 
@@ -148,6 +165,35 @@ export default async function ContentStatusPage() {
                 <TableCell><YesNo value={Boolean(s.regulatorUrl)} /></TableCell>
                 <TableCell><YesNo value={Boolean(s.hotline)} /></TableCell>
                 <TableCell className="text-sm text-muted-foreground">{s.legalStatus ?? '—'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <h2 className="mt-10 mb-1 text-lg font-semibold">Authors</h2>
+      <p className="mb-3 text-sm text-muted-foreground">
+        {pct(withAvatar, authorTotal)}% with avatar · {pct(withFullBio, authorTotal)}% with full bio · {pct(withSocial, authorTotal)}% with a social link
+      </p>
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Author</TableHead>
+              <TableHead>Avatar</TableHead>
+              <TableHead>Full bio</TableHead>
+              <TableHead className="text-right">Socials</TableHead>
+              <TableHead className="text-right">Since</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {authorRows.map((a) => (
+              <TableRow key={a.slug}>
+                <TableCell className="font-medium">{a.name}</TableCell>
+                <TableCell><YesNo value={Boolean(a.avatarUrl)} /></TableCell>
+                <TableCell><YesNo value={Boolean(a.fullBio)} /></TableCell>
+                <TableCell className="text-right tabular-nums">{a.socialCount}</TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">{a.yearsExperience ?? '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

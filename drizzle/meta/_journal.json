@@ -71,6 +71,13 @@
       "when": 1780961098779,
       "tag": "0009_whole_sersi",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780961747809,
+      "tag": "0010_organic_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

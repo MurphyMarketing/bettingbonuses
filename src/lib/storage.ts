@@ -7,6 +7,7 @@ import { StorageClient } from '@supabase/storage-js';
  */
 export const LOGO_BUCKET = 'brand-logos';
 export const ARTICLE_IMAGE_BUCKET = 'article-images';
+export const AUTHOR_AVATAR_BUCKET = 'author-avatars';
 
 function env() {
   const url = process.env.SUPABASE_URL;

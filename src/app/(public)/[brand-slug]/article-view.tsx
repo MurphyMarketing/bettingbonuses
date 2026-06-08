@@ -32,7 +32,7 @@ export async function ArticleView({ article }: { article: Article }) {
   const ids = [article.primaryAuthorId, article.secondaryAuthorId].filter((x): x is string => Boolean(x));
   const authorRows = ids.length
     ? await db
-        .select({ id: authors.id, slug: authors.slug, name: authors.name, title: authors.title, avatarUrl: authors.avatarUrl })
+        .select({ id: authors.id, slug: authors.slug, name: authors.name, title: authors.title, avatarUrl: authors.avatarUrl, yearsExperience: authors.yearsExperience })
         .from(authors)
         .where(inArray(authors.id, ids))
     : [];
@@ -40,7 +40,7 @@ export async function ArticleView({ article }: { article: Article }) {
   const byline: BylineAuthor[] = [article.primaryAuthorId, article.secondaryAuthorId]
     .map((id) => authorRows.find((a) => a.id === id))
     .filter((a): a is (typeof authorRows)[number] => Boolean(a))
-    .map((a) => ({ slug: a.slug, name: a.name, title: a.title, avatarUrl: a.avatarUrl }));
+    .map((a) => ({ slug: a.slug, name: a.name, title: a.title, avatarUrl: a.avatarUrl, yearsExperience: a.yearsExperience }));
 
   const primary = byline[0];
   const publishedOn = article.publishedAt

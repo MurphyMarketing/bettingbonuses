@@ -5,8 +5,9 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { authors } from '@/db/schema';
 import { Button } from '@/components/ui/button';
-import { updateAuthor, deactivateAuthor } from '../../actions';
+import { updateAuthor, deactivateAuthor, uploadAuthorAvatar } from '../../actions';
 import { AuthorForm, type AuthorFormValues } from '../../author-form';
+import { AvatarUpload } from '../../avatar-upload';
 
 export const metadata: Metadata = { title: 'Edit author', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,13 @@ export default async function EditAuthorPage({ params }: { params: Promise<{ id:
     title: author.title ?? '',
     credentials: author.credentials ?? '',
     bio: author.bio ?? '',
-    avatarUrl: author.avatarUrl ?? '',
+    fullBio: author.fullBio ?? '',
+    linkedinUrl: author.linkedinUrl ?? '',
+    twitterUrl: author.twitterUrl ?? '',
+    websiteUrl: author.websiteUrl ?? '',
+    email: author.email ?? '',
+    expertiseAreas: (author.expertiseAreas ?? []).join('\n'),
+    yearsExperience: author.yearsExperience != null ? String(author.yearsExperience) : '',
     isActive: author.isActive,
     displayOrder: String(author.displayOrder),
   };
@@ -34,6 +41,10 @@ export default async function EditAuthorPage({ params }: { params: Promise<{ id:
         <h1 className="mt-1 text-2xl font-semibold">{author.name}</h1>
         <p className="text-sm text-muted-foreground">/authors/{author.slug}</p>
       </div>
+
+      <section className="mb-8 rounded-lg border p-4">
+        <AvatarUpload action={uploadAuthorAvatar.bind(null, author.id)} avatarUrl={author.avatarUrl} />
+      </section>
 
       <AuthorForm action={updateAuthor.bind(null, author.id)} values={values} submitLabel="Save changes" />
 

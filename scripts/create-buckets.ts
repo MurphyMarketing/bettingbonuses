@@ -7,10 +7,10 @@ import { loadEnvConfig } from '@next/env';
 
 async function main() {
   loadEnvConfig(process.cwd());
-  const { getStorage, LOGO_BUCKET, ARTICLE_IMAGE_BUCKET } = await import('@/lib/storage');
+  const { getStorage, LOGO_BUCKET, ARTICLE_IMAGE_BUCKET, AUTHOR_AVATAR_BUCKET } = await import('@/lib/storage');
   const storage = getStorage();
 
-  for (const bucket of [LOGO_BUCKET, ARTICLE_IMAGE_BUCKET]) {
+  for (const bucket of [LOGO_BUCKET, ARTICLE_IMAGE_BUCKET, AUTHOR_AVATAR_BUCKET]) {
     const { error } = await storage.createBucket(bucket, { public: true });
     if (error && !/already exists/i.test(error.message)) throw error;
     console.log(`bucket "${bucket}": ${error ? 'already exists' : 'created'}`);

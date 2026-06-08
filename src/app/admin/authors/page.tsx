@@ -19,8 +19,13 @@ export default async function AuthorsListPage() {
       title: authors.title,
       isActive: authors.isActive,
       displayOrder: authors.displayOrder,
-      brandCount: sql<number>`(select count(*)::int from ${brands} where ${brands.primaryAuthorId} = ${authors.id} or ${brands.secondaryAuthorId} = ${authors.id})`,
-      articleCount: sql<number>`(select count(*)::int from ${articles} where ${articles.primaryAuthorId} = ${authors.id} or ${articles.secondaryAuthorId} = ${authors.id})`,
+      avatarUrl: authors.avatarUrl,
+      fullBio: authors.fullBio,
+      yearsExperience: authors.yearsExperience,
+      socialCount: sql<number>`((${authors.linkedinUrl} is not null)::int + (${authors.twitterUrl} is not null)::int + (${authors.websiteUrl} is not null)::int + (${authors.email} is not null)::int)`,
+      // Qualify the outer authors.id so it isn't shadowed by brands.id/articles.id in the subquery.
+      brandCount: sql<number>`(select count(*)::int from ${brands} where ${brands.primaryAuthorId} = ${sql.raw('"authors"."id"')} or ${brands.secondaryAuthorId} = ${sql.raw('"authors"."id"')})`,
+      articleCount: sql<number>`(select count(*)::int from ${articles} where ${articles.primaryAuthorId} = ${sql.raw('"authors"."id"')} or ${articles.secondaryAuthorId} = ${sql.raw('"authors"."id"')})`,
     })
     .from(authors)
     .orderBy(asc(authors.displayOrder), asc(authors.name));
@@ -41,6 +46,10 @@ export default async function AuthorsListPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Title</TableHead>
+              <TableHead>Avatar</TableHead>
+              <TableHead>Full bio</TableHead>
+              <TableHead className="text-right">Socials</TableHead>
+              <TableHead className="text-right">Since</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Brands</TableHead>
               <TableHead className="text-right">Articles</TableHead>
@@ -54,6 +63,10 @@ export default async function AuthorsListPage() {
                   <span className="block text-xs text-muted-foreground">/authors/{a.slug}</span>
                 </TableCell>
                 <TableCell>{a.title ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell>{a.avatarUrl ? <span className="text-primary">Yes</span> : <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell>{a.fullBio ? <span className="text-primary">Yes</span> : <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell className="text-right tabular-nums">{a.socialCount}</TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">{a.yearsExperience ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant={a.isActive ? 'default' : 'destructive'}>{a.isActive ? 'Active' : 'Inactive'}</Badge>
                 </TableCell>

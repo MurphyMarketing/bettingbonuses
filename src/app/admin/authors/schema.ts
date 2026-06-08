@@ -16,6 +16,21 @@ const optionalUrl = z
   .nullable()
   .optional();
 
+const optionalEmail = z
+  .string()
+  .trim()
+  .refine((v) => v === '' || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), 'Must be a valid email')
+  .transform((v) => (v === '' ? null : v))
+  .nullable()
+  .optional();
+
+// Multi-line textarea -> string[] (one item per line), or null if empty.
+const linesToArray = z
+  .string()
+  .transform((v) => v.split('\n').map((s) => s.trim()).filter(Boolean))
+  .transform((arr) => (arr.length ? arr : null))
+  .nullable();
+
 export const authorSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
   slug: z
@@ -28,7 +43,14 @@ export const authorSchema = z.object({
   title: optionalText,
   credentials: optionalText,
   bio: optionalText,
-  avatarUrl: optionalUrl,
+  fullBio: optionalText, // HTML from RichTextEditor (sanitized on render)
+  // avatarUrl is managed by the avatar-upload action, not this form.
+  linkedinUrl: optionalUrl,
+  twitterUrl: optionalUrl,
+  websiteUrl: optionalUrl,
+  email: optionalEmail,
+  expertiseAreas: linesToArray,
+  yearsExperience: z.coerce.number().int().min(1900).max(2100).nullable().optional(),
   isActive: z.boolean().default(true),
   displayOrder: z.coerce.number().int().default(0),
 });
@@ -60,7 +82,13 @@ export function authorFormToRaw(formData: FormData) {
     title: str('title'),
     credentials: str('credentials'),
     bio: str('bio'),
-    avatarUrl: str('avatarUrl'),
+    fullBio: str('fullBio'),
+    linkedinUrl: str('linkedinUrl'),
+    twitterUrl: str('twitterUrl'),
+    websiteUrl: str('websiteUrl'),
+    email: str('email'),
+    expertiseAreas: str('expertiseAreas'),
+    yearsExperience: blankToUndef('yearsExperience'),
     isActive: formData.get('isActive') != null,
     displayOrder: blankToUndef('displayOrder') ?? '0',
   };

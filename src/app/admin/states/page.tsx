@@ -22,7 +22,7 @@ export default async function StatesAdminListPage() {
       regulatorUrl: regions.regulatorUrl,
       hotline: regions.problemGamblingHotline,
       legalStatus: regions.bettingLegalStatus,
-      brandCount: sql<number>`(select count(distinct ${brandRegions.brandId})::int from ${brandRegions} inner join ${brands} on ${brands.id} = ${brandRegions.brandId} where ${brandRegions.regionId} = ${regions.id} and ${brandRegions.isActive} = true and ${brands.status} = 'active')`,
+      brandCount: sql<number>`(select count(distinct ${brandRegions.brandId})::int from ${brandRegions} inner join ${brands} on ${brands.id} = ${brandRegions.brandId} where ${brandRegions.regionId} = ${sql.raw('"regions"."id"')} and ${brandRegions.isActive} = true and ${brands.status} = 'active')`,
     })
     .from(regions)
     .orderBy(asc(regions.name));

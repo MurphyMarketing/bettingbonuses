@@ -79,10 +79,10 @@ export async function BrandView({ brand }: { brand: Brand }) {
       : Promise.resolve([] as { slug: string; name: string; category: string }[]),
     authorIds.length
       ? db
-          .select({ id: authors.id, slug: authors.slug, name: authors.name, title: authors.title, avatarUrl: authors.avatarUrl })
+          .select({ id: authors.id, slug: authors.slug, name: authors.name, title: authors.title, avatarUrl: authors.avatarUrl, yearsExperience: authors.yearsExperience })
           .from(authors)
           .where(inArray(authors.id, authorIds))
-      : Promise.resolve([] as { id: string; slug: string; name: string; title: string | null; avatarUrl: string | null }[]),
+      : Promise.resolve([] as { id: string; slug: string; name: string; title: string | null; avatarUrl: string | null; yearsExperience: number | null }[]),
   ]);
 
   const successor = successorRows[0];
@@ -99,7 +99,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
   const bylineAuthors: BylineAuthor[] = [brand.primaryAuthorId, brand.secondaryAuthorId]
     .map((id) => authorRows.find((a) => a.id === id))
     .filter((a): a is (typeof authorRows)[number] => Boolean(a))
-    .map((a) => ({ slug: a.slug, name: a.name, title: a.title, avatarUrl: a.avatarUrl }));
+    .map((a) => ({ slug: a.slug, name: a.name, title: a.title, avatarUrl: a.avatarUrl, yearsExperience: a.yearsExperience }));
 
   const productLd = {
     '@context': 'https://schema.org',

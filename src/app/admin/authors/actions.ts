@@ -3,9 +3,11 @@
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { authors } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
+import { getStorage, publicUrl, AUTHOR_AVATAR_BUCKET } from '@/lib/storage';
 import { authorSchema, authorFormToRaw, toFieldErrors, type AuthorFormState, type AuthorInput } from './schema';
 
 function toColumns(data: AuthorInput, slug: string) {
@@ -15,10 +17,54 @@ function toColumns(data: AuthorInput, slug: string) {
     title: data.title ?? null,
     credentials: data.credentials ?? null,
     bio: data.bio ?? null,
-    avatarUrl: data.avatarUrl ?? null,
+    fullBio: data.fullBio ?? null,
+    // avatarUrl is owned by uploadAuthorAvatar, not this form.
+    linkedinUrl: data.linkedinUrl ?? null,
+    twitterUrl: data.twitterUrl ?? null,
+    websiteUrl: data.websiteUrl ?? null,
+    email: data.email ?? null,
+    expertiseAreas: data.expertiseAreas ?? null,
+    yearsExperience: data.yearsExperience ?? null,
     isActive: data.isActive,
     displayOrder: data.displayOrder,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Avatar upload
+ * ------------------------------------------------------------------ */
+export type AvatarUploadState = { error?: string; ok?: boolean };
+
+const AVATAR_MAX_BYTES = 1024 * 1024; // 1MB
+const AVATAR_EXT: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+};
+
+export async function uploadAuthorAvatar(id: string, _prev: AvatarUploadState, formData: FormData): Promise<AvatarUploadState> {
+  const session = await auth();
+  if (!session) return { error: 'Unauthorized' };
+
+  const [author] = await db.select({ slug: authors.slug }).from(authors).where(eq(authors.id, id)).limit(1);
+  if (!author) return { error: 'Author not found.' };
+
+  const file = formData.get('avatar');
+  if (!(file instanceof File) || file.size === 0) return { error: 'Choose an image to upload.' };
+  if (file.size > AVATAR_MAX_BYTES) return { error: 'Avatar is larger than 1MB.' };
+  const ext = AVATAR_EXT[file.type];
+  if (!ext) return { error: 'Avatar must be PNG, JPEG, or WebP.' };
+
+  const objectPath = `${author.slug}.${ext}`;
+  const { error } = await getStorage()
+    .from(AUTHOR_AVATAR_BUCKET)
+    .upload(objectPath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true });
+  if (error) return { error: `Upload failed: ${error.message}` };
+
+  await db.update(authors).set({ avatarUrl: `${publicUrl(AUTHOR_AVATAR_BUCKET, objectPath)}?v=${Date.now()}`, updatedAt: new Date() }).where(eq(authors.id, id));
+  revalidatePath(`/admin/authors/${id}/edit`);
+  revalidatePath(`/authors/${author.slug}/`);
+  return { ok: true };
 }
 
 // Author slugs are their own namespace (/authors/[slug]); unique within authors.

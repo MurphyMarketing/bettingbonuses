@@ -382,10 +382,17 @@ export const authors = pgTable('authors', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   slug: varchar('slug', { length: 100 }).unique().notNull(),
   name: text('name').notNull(),
-  title: text('title'),                                        // "Co-founder, BettingBonuses.com"
-  bio: text('bio'),                                            // markdown
+  title: text('title'),                                        // position title, e.g. "Co-founder, BettingBonuses.com"
+  bio: text('bio'),                                            // short bio for bylines
+  fullBio: text('full_bio'),                                   // long-form bio (HTML) for the author page
   avatarUrl: text('avatar_url'),
   credentials: text('credentials'),                            // "Regulated online betting since 2008"
+  linkedinUrl: text('linkedin_url'),
+  twitterUrl: text('twitter_url'),
+  websiteUrl: text('website_url'),
+  email: text('email'),                                        // public contact, optional
+  expertiseAreas: jsonb('expertise_areas').$type<string[]>(),  // e.g. ["Sports Betting", "Horse Racing"]
+  yearsExperience: integer('years_experience'),                // START year (e.g. 2008); render computes the count
   isActive: boolean('is_active').notNull().default(true),
   displayOrder: integer('display_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
