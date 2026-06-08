@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { regions, brandRegions, brands, offers, offerRegions } from '@/db/schema';
 import { Card, CardTitle } from '@/components/ui/card';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 export const revalidate = 3600;
@@ -147,13 +148,33 @@ export default async function StatePage({ params }: { params: Params }) {
         Best Sports Betting Promo Codes in {region.name}
       </h1>
 
+      {/* State intro (admin-authored) */}
+      {region.intro ? (
+        <div
+          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(region.intro) }}
+        />
+      ) : null}
+
       {/* Region context */}
       <p className="mt-3 max-w-2xl text-muted-foreground">
         {region.regulator || legalSince ? (
           <>
             Sports betting in {region.name}
             {legalSince ? ` has been legal since ${legalSince}` : ' is available'}
-            {region.regulator ? `, regulated by ${region.regulator}` : ''}.{' '}
+            {region.regulator ? (
+              <>
+                , regulated by{' '}
+                {region.regulatorUrl ? (
+                  <a href={region.regulatorUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    {region.regulator}
+                  </a>
+                ) : (
+                  region.regulator
+                )}
+              </>
+            ) : null}
+            .{' '}
           </>
         ) : null}
         Compare current sign-up offers from every operator live in {region.name}.

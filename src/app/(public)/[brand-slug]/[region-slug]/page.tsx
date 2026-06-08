@@ -7,6 +7,7 @@ import { brands, brandRegions, offers, offerRegions, regions } from '@/db/schema
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 export const revalidate = 3600; // ISR: 1 hour
@@ -38,7 +39,7 @@ async function getContext(brandSlug: string, regionSlug: string) {
   if (!region) return null;
 
   const [link] = await db
-    .select({ launchedAt: brandRegions.launchedAt })
+    .select({ launchedAt: brandRegions.launchedAt, context: brandRegions.context, headlineOverride: brandRegions.headlineOverride })
     .from(brandRegions)
     .where(and(eq(brandRegions.brandId, brand.id), eq(brandRegions.regionId, region.id)))
     .limit(1);
@@ -169,10 +170,10 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
         </div>
       ) : null}
 
-      {/* H1 */}
+      {/* H1 (custom override or default template) */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold tracking-tight">
-          {brand.name} Promo Code in {region.name}
+          {link.headlineOverride || `${brand.name} Promo Code in ${region.name}`}
         </h1>
         <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
       </div>
@@ -183,6 +184,14 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
         {launchedOn ? ` ${brand.name} launched in ${region.name} on ${launchedOn}.` : ''}
         {region.regulator ? ` Sports betting in ${region.name} is regulated by ${region.regulator}.` : ''}
       </p>
+
+      {/* Custom per brand × state copy */}
+      {link.context ? (
+        <div
+          className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(link.context) }}
+        />
+      ) : null}
 
       {/* Filtered offers */}
       <section className="mt-8">

@@ -152,7 +152,9 @@ export const regions = pgTable('regions', {
   // Legality context for content rendering
   bettingLegalDate: timestamp('betting_legal_date', { withTimezone: true }),
   bettingLegalStatus: text('betting_legal_status'),            // 'legal_live', 'legal_pending', 'illegal', 'tribal_only'
-  regulator: text('regulator'),                                // "Missouri Gaming Commission"
+  regulator: text('regulator'),                                // regulator name, e.g. "Missouri Gaming Commission"
+  regulatorUrl: text('regulator_url'),                         // link to the state regulator
+  intro: text('intro'),                                        // state-level intro (HTML, sanitized on render)
   problemGamblingHotline: text('problem_gambling_hotline'),    // for footer/disclosure
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -171,6 +173,8 @@ export const brandRegions = pgTable('brand_regions', {
   launchedAt: timestamp('launched_at', { withTimezone: true }),
   isActive: boolean('is_active').notNull().default(true),
   notes: text('notes'),
+  context: text('context'),                                    // per brand × state copy (HTML, sanitized on render)
+  headlineOverride: text('headline_override'),                 // optional H1 override on the brand × state page
 }, (table) => ({
   pk: primaryKey({ columns: [table.brandId, table.regionId] }),
 }));

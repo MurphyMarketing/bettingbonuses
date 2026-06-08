@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, offers, articles, authors } from '@/db/schema';
+import { brands, offers, articles, authors, regions, brandRegions } from '@/db/schema';
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ function Count({ n }: { n: number }) {
 }
 
 export default async function ContentStatusPage() {
-  const [brandRows, articleRows] = await Promise.all([
+  const [brandRows, articleRows, stateRows] = await Promise.all([
     db
       .select({
         id: brands.id,
@@ -45,6 +45,8 @@ export default async function ContentStatusPage() {
         depositOptions: brands.depositOptions,
         primaryAuthorId: brands.primaryAuthorId,
         offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${brands.id} and ${offers.status} = 'active')`,
+        statesTotal: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${brands.id})`,
+        statesWithContext: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${brands.id} and ${brandRegions.context} is not null)`,
       })
       .from(brands)
       .orderBy(asc(brands.name)),
@@ -59,6 +61,17 @@ export default async function ContentStatusPage() {
       .from(articles)
       .leftJoin(authors, eq(articles.primaryAuthorId, authors.id))
       .orderBy(asc(articles.title)),
+    db
+      .select({
+        name: regions.name,
+        slug: regions.slug,
+        intro: regions.intro,
+        regulatorUrl: regions.regulatorUrl,
+        hotline: regions.problemGamblingHotline,
+        legalStatus: regions.bettingLegalStatus,
+      })
+      .from(regions)
+      .orderBy(asc(regions.name)),
   ]);
 
   const len = (a: string[] | null) => (a ? a.length : 0);
@@ -85,6 +98,7 @@ export default async function ContentStatusPage() {
               <TableHead>Deposits</TableHead>
               <TableHead className="text-right">Offers</TableHead>
               <TableHead>Author</TableHead>
+              <TableHead className="text-right">States w/ context</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -103,6 +117,37 @@ export default async function ContentStatusPage() {
                 <TableCell><YesNo value={Boolean(b.depositOptions)} /></TableCell>
                 <TableCell className="text-right"><Count n={b.offerCount} /></TableCell>
                 <TableCell><YesNo value={Boolean(b.primaryAuthorId)} /></TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {b.statesWithContext}/{b.statesTotal}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <h2 className="mt-10 mb-3 text-lg font-semibold">States</h2>
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>State</TableHead>
+              <TableHead>Intro</TableHead>
+              <TableHead>Regulator URL</TableHead>
+              <TableHead>Hotline</TableHead>
+              <TableHead>Legal status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stateRows.map((s) => (
+              <TableRow key={s.slug}>
+                <TableCell>
+                  <Link href={`/admin/states/${s.slug}`} className="font-medium hover:underline">{s.name}</Link>
+                </TableCell>
+                <TableCell><YesNo value={Boolean(s.intro)} /></TableCell>
+                <TableCell><YesNo value={Boolean(s.regulatorUrl)} /></TableCell>
+                <TableCell><YesNo value={Boolean(s.hotline)} /></TableCell>
+                <TableCell className="text-sm text-muted-foreground">{s.legalStatus ?? '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

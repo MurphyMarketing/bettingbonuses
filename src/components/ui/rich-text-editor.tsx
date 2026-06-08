@@ -50,7 +50,7 @@ function Btn({ onClick, active, disabled, title, children }: { onClick: () => vo
   );
 }
 
-function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
+function Toolbar({ editor, onImage }: { editor: Editor; onImage?: () => void }) {
   const setLink = () => {
     const prev = editor.getAttributes('link').href as string | undefined;
     const url = window.prompt('Link URL', prev ?? 'https://');
@@ -74,7 +74,7 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
       <Btn title="Blockquote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote className="size-4" /></Btn>
       <Btn title="Code block" active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()}><CodeBlockIcon className="size-4" /></Btn>
       <Btn title="Inline code" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}><Code2 className="size-4" /></Btn>
-      <Btn title="Insert image" onClick={onImage}><ImageIcon className="size-4" /></Btn>
+      {onImage ? <Btn title="Insert image" onClick={onImage}><ImageIcon className="size-4" /></Btn> : null}
       <Btn title="Insert table" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><TableIcon className="size-4" /></Btn>
       <span className="mx-1 h-5 w-px bg-border" />
       <Btn title="Undo" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}><Undo className="size-4" /></Btn>
@@ -151,7 +151,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     <div className="rounded-lg border focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
       <input type="hidden" name={name} value={html} />
       <div className="flex items-center justify-between border-b">
-        {editor && !source ? <Toolbar editor={editor} onImage={pickImage} /> : <div className="p-2 text-xs text-muted-foreground">HTML source</div>}
+        {editor && !source ? <Toolbar editor={editor} onImage={onImageUpload ? pickImage : undefined} /> : <div className="p-2 text-xs text-muted-foreground">HTML source</div>}
         <button type="button" onClick={toggleSource} className="mr-2 shrink-0 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted">
           {source ? 'Editor' : 'Source'}
         </button>

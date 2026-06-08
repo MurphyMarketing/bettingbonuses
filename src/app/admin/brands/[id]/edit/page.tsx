@@ -74,6 +74,9 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{brand.name}</h1>
         <p className="text-sm text-muted-foreground">/{brand.slug}</p>
+        <Link href={`/admin/brands/${id}/states`} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+          Manage states →
+        </Link>
       </div>
 
       <section className="mb-8 rounded-lg border p-4">
