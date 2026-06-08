@@ -398,6 +398,9 @@ export const articles = pgTable('articles', {
   secondaryAuthorId: text('secondary_author_id').references(() => authors.id),
   status: articleStatusEnum('status').notNull().default('draft'),
   readingTimeMinutes: integer('reading_time_minutes'),         // auto-calculated from body
+  // Autosave: unsaved editor HTML; restored if newer than updatedAt.
+  draftBody: text('draft_body'),
+  draftUpdatedAt: timestamp('draft_updated_at', { withTimezone: true }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

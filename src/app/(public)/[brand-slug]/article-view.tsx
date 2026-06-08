@@ -1,16 +1,27 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { eq, inArray } from 'drizzle-orm';
-import Markdown from 'react-markdown';
-import rehypeSanitize from 'rehype-sanitize';
+import DOMPurify from 'isomorphic-dompurify';
 import { db } from '@/db';
 import { articles, authors } from '@/db/schema';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 
 type Article = typeof articles.$inferSelect;
 
-const MARKDOWN_CLASS =
-  'max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mt-1 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_blockquote]:mt-4 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic';
+// Article bodies are admin-authored HTML (Tiptap). Sanitize before rendering.
+function sanitizeArticleHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'br', 'strong', 'em', 'u', 's', 'a', 'h2', 'h3', 'ul', 'ol', 'li',
+      'blockquote', 'code', 'pre', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr',
+    ],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'width', 'height', 'colspan', 'rowspan'],
+    ALLOWED_URI_REGEXP: /^(https?:|mailto:|\/)/i,
+  });
+}
+
+const BODY_CLASS =
+  'max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mt-1 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_blockquote]:mt-4 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:my-4 [&_img]:rounded-lg [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:bg-muted [&_th]:p-2 [&_pre]:my-4 [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-sm [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5';
 
 /** Published article by slug, or null. */
 export async function getPublishedArticle(slug: string): Promise<Article | null> {
@@ -71,9 +82,10 @@ export async function ArticleView({ article }: { article: Article }) {
       {article.excerpt ? <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{article.excerpt}</p> : null}
 
       {article.body ? (
-        <div className={`mt-8 ${MARKDOWN_CLASS}`}>
-          <Markdown rehypePlugins={[rehypeSanitize]}>{article.body}</Markdown>
-        </div>
+        <div
+          className={`mt-8 ${BODY_CLASS}`}
+          dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.body) }}
+        />
       ) : null}
 
       <AuthorByline authors={byline} label="Written by" />

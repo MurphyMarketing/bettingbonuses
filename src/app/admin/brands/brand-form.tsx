@@ -13,8 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { slugify } from '@/lib/slug';
+import { SortableArrayField } from '@/components/ui/sortable-array-field';
 import { categoryLabel, statusLabel } from './labels';
 import type { BrandFormState } from './schema';
+
+// Split a stored newline-joined value into an array for SortableArrayField.
+const toLines = (v: string): string[] => v.split('\n').map((s) => s.trim()).filter(Boolean);
 
 export type Option = { value: string; label: string };
 
@@ -269,23 +273,15 @@ export function BrandForm({
       {/* Review content (Sprint B) */}
       <section className="flex flex-col gap-4 rounded-lg border p-4">
         <h2 className="text-sm font-medium">Review content</h2>
-        <Field label="How to claim — steps" htmlFor="howToClaimSteps" errors={errs.howToClaimSteps} hint="One step per line.">
-          <Textarea id="howToClaimSteps" name="howToClaimSteps" rows={4} defaultValue={values.howToClaimSteps} />
-        </Field>
+        <SortableArrayField name="howToClaimSteps" label="How to claim — steps" hint="Drag to reorder." initial={toLines(values.howToClaimSteps)} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Pros" htmlFor="pros" errors={errs.pros} hint="One per line.">
-            <Textarea id="pros" name="pros" rows={4} defaultValue={values.pros} />
-          </Field>
-          <Field label="Cons" htmlFor="cons" errors={errs.cons} hint="One per line.">
-            <Textarea id="cons" name="cons" rows={4} defaultValue={values.cons} />
-          </Field>
+          <SortableArrayField name="pros" label="Pros" hint="Drag to reorder." initial={toLines(values.pros)} />
+          <SortableArrayField name="cons" label="Cons" hint="Drag to reorder." initial={toLines(values.cons)} />
         </div>
         <Field label="Verdict" htmlFor="verdict" errors={errs.verdict}>
           <Textarea id="verdict" name="verdict" rows={3} defaultValue={values.verdict} />
         </Field>
-        <Field label="Other promotions" htmlFor="otherPromotions" errors={errs.otherPromotions} hint="One per line.">
-          <Textarea id="otherPromotions" name="otherPromotions" rows={3} defaultValue={values.otherPromotions} />
-        </Field>
+        <SortableArrayField name="otherPromotions" label="Other promotions" hint="Drag to reorder." initial={toLines(values.otherPromotions)} />
         <Field label="Deposit options" htmlFor="depositOptions" errors={errs.depositOptions} hint="Comma-separated, e.g. Visa, PayPal, ACH.">
           <Input id="depositOptions" name="depositOptions" defaultValue={values.depositOptions} />
         </Field>

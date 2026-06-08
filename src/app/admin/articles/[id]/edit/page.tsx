@@ -49,6 +49,12 @@ export default async function EditArticlePage({ params }: { params: Promise<{ id
         statuses={ARTICLE_STATUS_VALUES}
         values={values}
         submitLabel="Save changes"
+        articleId={article.id}
+        initialDraft={
+          article.draftBody && article.draftUpdatedAt && article.draftUpdatedAt.getTime() > article.updatedAt.getTime()
+            ? { body: article.draftBody, savedAt: article.draftUpdatedAt }
+            : null
+        }
       />
 
       {article.status !== 'archived' ? (

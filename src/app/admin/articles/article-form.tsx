@@ -1,12 +1,15 @@
 'use client';
 
-import { useActionState, useState, type ReactNode } from 'react';
+import { useActionState, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RichTextEditor, type RichTextEditorHandle } from '@/components/ui/rich-text-editor';
 import { slugify } from '@/lib/slug';
+import { formatRelativeTime } from '@/lib/datetime';
+import { uploadArticleImage, saveArticleDraft, discardArticleDraft } from './actions';
 import { articleCategoryLabel, articleStatusLabel } from './labels';
 import type { ArticleFormState } from './schema';
 
@@ -35,6 +38,8 @@ function Field({ label, htmlFor, errors, children, hint }: { label: string; html
   );
 }
 
+const AUTOSAVE_MS = 30_000;
+
 export function ArticleForm({
   action,
   authorsOptions,
@@ -42,6 +47,8 @@ export function ArticleForm({
   statuses,
   values,
   submitLabel,
+  articleId,
+  initialDraft,
 }: {
   action: (prev: ArticleFormState, formData: FormData) => Promise<ArticleFormState>;
   authorsOptions: Option[];
@@ -49,6 +56,8 @@ export function ArticleForm({
   statuses: readonly string[];
   values: ArticleFormValues;
   submitLabel: string;
+  articleId?: string;
+  initialDraft?: { body: string; savedAt: Date } | null;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const errs = state.errors ?? {};
@@ -56,9 +65,60 @@ export function ArticleForm({
   const [slug, setSlug] = useState(values.slug);
   const [slugEdited, setSlugEdited] = useState(Boolean(values.slug));
 
+  const editorRef = useRef<RichTextEditorHandle>(null);
+  const bodyRef = useRef(values.body);
+  const [draft, setDraft] = useState(initialDraft ?? null);
+
+  // Autosave the editor HTML to draft_body every 30s (edit mode only — a brand
+  // new article has no id yet to attach a draft to).
+  useEffect(() => {
+    if (!articleId) return;
+    const t = setInterval(() => {
+      void saveArticleDraft(articleId, bodyRef.current);
+    }, AUTOSAVE_MS);
+    return () => clearInterval(t);
+  }, [articleId]);
+
+  const onImageUpload = async (file: File): Promise<string | null> => {
+    const fd = new FormData();
+    fd.set('file', file);
+    const res = await uploadArticleImage(fd);
+    if (res.error) {
+      window.alert(res.error);
+      return null;
+    }
+    return res.url ?? null;
+  };
+
   return (
     <form action={formAction} className="flex flex-col gap-6">
       {errs._form?.length ? <p role="alert" className="text-sm text-destructive">{errs._form.join(' ')}</p> : null}
+
+      {draft && articleId ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <span>Unsaved draft from {formatRelativeTime(draft.savedAt)}.</span>
+          <button
+            type="button"
+            className="font-medium text-primary underline"
+            onClick={() => {
+              editorRef.current?.setContent(draft.body);
+              setDraft(null);
+            }}
+          >
+            Restore draft
+          </button>
+          <button
+            type="button"
+            className="text-muted-foreground underline"
+            onClick={async () => {
+              await discardArticleDraft(articleId);
+              setDraft(null);
+            }}
+          >
+            Discard draft
+          </button>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Title" htmlFor="title" errors={errs.title}>
@@ -110,8 +170,15 @@ export function ArticleForm({
       <Field label="Excerpt" htmlFor="excerpt" errors={errs.excerpt}>
         <Textarea id="excerpt" name="excerpt" rows={2} defaultValue={values.excerpt} />
       </Field>
-      <Field label="Body (Markdown)" htmlFor="body" errors={errs.body} hint="Reading time is calculated automatically from the word count.">
-        <Textarea id="body" name="body" rows={16} defaultValue={values.body} className="font-mono text-sm" />
+
+      <Field label="Body" errors={errs.body} hint="Rich text — stored as HTML. Reading time is calculated from the word count on save.">
+        <RichTextEditor
+          ref={editorRef}
+          name="body"
+          defaultValue={values.body}
+          onChange={(h) => { bodyRef.current = h; }}
+          onImageUpload={onImageUpload}
+        />
       </Field>
 
       <div>

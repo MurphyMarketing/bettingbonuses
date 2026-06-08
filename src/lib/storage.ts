@@ -6,6 +6,7 @@ import { StorageClient } from '@supabase/storage-js';
  * SERVER-ONLY; never import it into a client component.
  */
 export const LOGO_BUCKET = 'brand-logos';
+export const ARTICLE_IMAGE_BUCKET = 'article-images';
 
 function env() {
   const url = process.env.SUPABASE_URL;
@@ -24,8 +25,13 @@ export function getStorage(): StorageClient {
   });
 }
 
+/** Public URL for an object in any public bucket. */
+export function publicUrl(bucket: string, objectPath: string): string {
+  const { url } = env();
+  return `${url}/storage/v1/object/public/${bucket}/${objectPath}`;
+}
+
 /** Public URL for an object in the brand-logos bucket. */
 export function logoPublicUrl(objectPath: string): string {
-  const { url } = env();
-  return `${url}/storage/v1/object/public/${LOGO_BUCKET}/${objectPath}`;
+  return publicUrl(LOGO_BUCKET, objectPath);
 }

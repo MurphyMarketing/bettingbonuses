@@ -40,8 +40,8 @@ export default async function AffiliateLinksListPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Slug</TableHead>
               <TableHead>Brand</TableHead>
+              <TableHead>Slug</TableHead>
               <TableHead>Destination</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Clicks</TableHead>
@@ -51,10 +51,10 @@ export default async function AffiliateLinksListPage() {
           <TableBody>
             {rows.map((l) => (
               <TableRow key={l.id}>
+                <TableCell>{l.brandName ?? '—'}</TableCell>
                 <TableCell>
                   <Link href={`/admin/affiliate-links/${l.id}/edit`} className="font-mono text-sm font-medium hover:underline">/go/{l.slug}</Link>
                 </TableCell>
-                <TableCell>{l.brandName ?? '—'}</TableCell>
                 <TableCell className="max-w-xs truncate text-sm text-muted-foreground">{l.destinationUrl}</TableCell>
                 <TableCell><Badge variant={l.isActive ? 'default' : 'destructive'}>{l.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
                 <TableCell className="text-right tabular-nums">{l.clickCount}</TableCell>
