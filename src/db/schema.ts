@@ -254,7 +254,7 @@ export const offers = pgTable('offers', {
 
   // Verification — the trust signal
   lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
-  verifiedByUserId: integer('verified_by_user_id'),            // FK to users when auth is in
+  verifiedByUserId: text('verified_by_user_id'),               // users.id (Auth.js text UUID)
   verificationNotes: text('verification_notes'),
 
   // Display

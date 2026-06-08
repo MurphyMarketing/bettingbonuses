@@ -1,0 +1,318 @@
+'use client';
+
+import { useActionState, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { bonusKindLabel, userSegmentLabel, offerStatusLabel } from './labels';
+import type { OfferFormState } from './schema';
+
+export type Option = { value: string; label: string };
+
+export type OfferFormValues = {
+  brandId: string;
+  bonusKind: string;
+  userSegment: string;
+  eventId: string;
+  seriesId: string;
+  sportId: string;
+  code: string;
+  headline: string;
+  description: string;
+  bonusAmountCents: string;
+  bonusMaxCents: string;
+  qualifyingDepositCents: string;
+  qualifyingBetCents: string;
+  wageringRequirementMultiplier: string;
+  termsUrl: string;
+  termsSummary: string;
+  affiliateUrl: string;
+  isExclusive: boolean;
+  validFrom: string;
+  validTo: string;
+  verificationNotes: string;
+  priority: string;
+  isFeatured: boolean;
+  status: string;
+  attributes: string;
+};
+
+type OfferFormProps = {
+  action: (prev: OfferFormState, formData: FormData) => Promise<OfferFormState>;
+  brands: Option[];
+  events: Option[];
+  series: Option[];
+  sports: Option[];
+  regions: Option[];
+  selectedRegionIds: string[];
+  bonusKinds: readonly string[];
+  userSegments: readonly string[];
+  statuses: readonly string[];
+  values: OfferFormValues;
+  submitLabel: string;
+};
+
+function Field({
+  label,
+  htmlFor,
+  errors,
+  children,
+  hint,
+}: {
+  label: string;
+  htmlFor?: string;
+  errors?: string[];
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {errors?.length ? <p className="text-sm text-destructive">{errors.join(' ')}</p> : null}
+    </div>
+  );
+}
+
+function NullableSelect({
+  name,
+  defaultValue,
+  options,
+  placeholder,
+}: {
+  name: string;
+  defaultValue: string;
+  options: Option[];
+  placeholder: string;
+}) {
+  return (
+    <Select name={name} defaultValue={defaultValue || ''}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="">— None —</SelectItem>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export function OfferForm({
+  action,
+  brands,
+  events,
+  series,
+  sports,
+  regions,
+  selectedRegionIds,
+  bonusKinds,
+  userSegments,
+  statuses,
+  values,
+  submitLabel,
+}: OfferFormProps) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const errs = state.errors ?? {};
+  const selected = new Set(selectedRegionIds);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-8">
+      {errs._form?.length ? (
+        <p role="alert" className="text-sm text-destructive">
+          {errs._form.join(' ')}
+        </p>
+      ) : null}
+
+      {/* Core */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Brand" errors={errs.brandId}>
+          <Select name="brandId" defaultValue={values.brandId || undefined}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a brand" />
+            </SelectTrigger>
+            <SelectContent>
+              {brands.map((b) => (
+                <SelectItem key={b.value} value={b.value}>
+                  {b.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="Bonus type" errors={errs.bonusKind}>
+          <Select name="bonusKind" defaultValue={values.bonusKind || undefined}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a bonus type" />
+            </SelectTrigger>
+            <SelectContent>
+              {bonusKinds.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {bonusKindLabel(k)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="Headline" htmlFor="headline" errors={errs.headline}>
+          <Input id="headline" name="headline" required defaultValue={values.headline} />
+        </Field>
+
+        <Field label="Promo code" htmlFor="code" errors={errs.code}>
+          <Input id="code" name="code" defaultValue={values.code} />
+        </Field>
+
+        <Field label="User segment" errors={errs.userSegment}>
+          <Select name="userSegment" defaultValue={values.userSegment || 'new'}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a segment" />
+            </SelectTrigger>
+            <SelectContent>
+              {userSegments.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {userSegmentLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="Status" errors={errs.status}>
+          <Select name="status" defaultValue={values.status || 'draft'}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statuses.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {offerStatusLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </section>
+
+      <Field label="Description" htmlFor="description" errors={errs.description}>
+        <Textarea id="description" name="description" rows={3} defaultValue={values.description} />
+      </Field>
+
+      {/* Attachment */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Field label="Event (optional)" errors={errs.eventId} hint="If set, blank valid-to defaults to the event end.">
+          <NullableSelect name="eventId" defaultValue={values.eventId} options={events} placeholder="— None —" />
+        </Field>
+        <Field label="Series (optional)" errors={errs.seriesId}>
+          <NullableSelect name="seriesId" defaultValue={values.seriesId} options={series} placeholder="— None —" />
+        </Field>
+        <Field label="Sport (optional)" errors={errs.sportId}>
+          <NullableSelect name="sportId" defaultValue={values.sportId} options={sports} placeholder="— None —" />
+        </Field>
+      </section>
+
+      {/* Money (entered in dollars; stored as integer cents) */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Bonus amount ($)" htmlFor="bonusAmountCents" errors={errs.bonusAmountCents}>
+          <Input id="bonusAmountCents" name="bonusAmountCents" inputMode="decimal" placeholder="200.00" defaultValue={values.bonusAmountCents} />
+        </Field>
+        <Field label="Bonus max ($)" htmlFor="bonusMaxCents" errors={errs.bonusMaxCents} hint="Cap for percentage/deposit-match offers.">
+          <Input id="bonusMaxCents" name="bonusMaxCents" inputMode="decimal" placeholder="1000.00" defaultValue={values.bonusMaxCents} />
+        </Field>
+        <Field label="Qualifying deposit ($)" htmlFor="qualifyingDepositCents" errors={errs.qualifyingDepositCents}>
+          <Input id="qualifyingDepositCents" name="qualifyingDepositCents" inputMode="decimal" defaultValue={values.qualifyingDepositCents} />
+        </Field>
+        <Field label="Qualifying bet ($)" htmlFor="qualifyingBetCents" errors={errs.qualifyingBetCents}>
+          <Input id="qualifyingBetCents" name="qualifyingBetCents" inputMode="decimal" defaultValue={values.qualifyingBetCents} />
+        </Field>
+        <Field label="Wagering requirement (x)" htmlFor="wageringRequirementMultiplier" errors={errs.wageringRequirementMultiplier}>
+          <Input id="wageringRequirementMultiplier" name="wageringRequirementMultiplier" type="number" inputMode="numeric" defaultValue={values.wageringRequirementMultiplier} />
+        </Field>
+        <Field label="Priority" htmlFor="priority" errors={errs.priority} hint="Higher sorts first.">
+          <Input id="priority" name="priority" type="number" inputMode="numeric" defaultValue={values.priority} />
+        </Field>
+      </section>
+
+      {/* Terms & links */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Terms URL" htmlFor="termsUrl" errors={errs.termsUrl}>
+          <Input id="termsUrl" name="termsUrl" type="url" defaultValue={values.termsUrl} />
+        </Field>
+        <Field label="Affiliate URL" htmlFor="affiliateUrl" errors={errs.affiliateUrl}>
+          <Input id="affiliateUrl" name="affiliateUrl" type="url" defaultValue={values.affiliateUrl} />
+        </Field>
+      </section>
+      <Field label="Terms summary" htmlFor="termsSummary" errors={errs.termsSummary}>
+        <Textarea id="termsSummary" name="termsSummary" rows={2} defaultValue={values.termsSummary} />
+      </Field>
+
+      {/* Validity */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Valid from" htmlFor="validFrom" errors={errs.validFrom}>
+          <Input id="validFrom" name="validFrom" type="datetime-local" defaultValue={values.validFrom} />
+        </Field>
+        <Field label="Valid to" htmlFor="validTo" errors={errs.validTo} hint="Leave blank for evergreen (or to inherit an event end).">
+          <Input id="validTo" name="validTo" type="datetime-local" defaultValue={values.validTo} />
+        </Field>
+      </section>
+
+      {/* Flags */}
+      <section className="flex flex-wrap gap-6">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="isExclusive" defaultChecked={values.isExclusive} className="size-4" />
+          Exclusive offer
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="isFeatured" defaultChecked={values.isFeatured} className="size-4" />
+          Featured
+        </label>
+      </section>
+
+      {/* Regions multi-select */}
+      <Field label="Regions (optional)" errors={errs.regionIds} hint="Leave all unchecked to apply wherever the brand operates.">
+        <div className="grid max-h-56 grid-cols-2 gap-x-6 gap-y-1.5 overflow-y-auto rounded-lg border p-3 sm:grid-cols-3">
+          {regions.map((r) => (
+            <label key={r.value} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="regionIds"
+                value={r.value}
+                defaultChecked={selected.has(r.value)}
+                className="size-4"
+              />
+              {r.label}
+            </label>
+          ))}
+        </div>
+      </Field>
+
+      {/* Advanced */}
+      <Field
+        label="Attributes (JSON, optional)"
+        htmlFor="attributes"
+        errors={errs.attributes}
+        hint='Free-form extras, e.g. {"min_odds": "-200"}.'
+      >
+        <Textarea id="attributes" name="attributes" rows={2} defaultValue={values.attributes} className="font-mono text-xs" />
+      </Field>
+
+      <Field label="Verification notes" htmlFor="verificationNotes" errors={errs.verificationNotes}>
+        <Textarea id="verificationNotes" name="verificationNotes" rows={2} defaultValue={values.verificationNotes} />
+      </Field>
+
+      <div className="flex gap-3">
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Saving…' : submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+}

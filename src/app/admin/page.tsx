@@ -23,6 +23,9 @@ export default async function AdminHome() {
         <Link href="/admin/brands" className="text-sm font-medium text-primary hover:underline">
           Brands →
         </Link>
+        <Link href="/admin/offers" className="text-sm font-medium text-primary hover:underline">
+          Offers →
+        </Link>
       </nav>
 
       <form
