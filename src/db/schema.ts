@@ -331,6 +331,23 @@ export const affiliateLinks = pgTable('affiliate_links', {
 }));
 
 /* ============================================================
+ * USERS — admin auth only (Auth.js v5 credentials provider, JWT sessions).
+ *
+ * Phase 1 is credentials-only with a JWT session strategy, so no adapter and no
+ * accounts/sessions/verification_tokens tables — just this slim users table.
+ * id is a text UUID; passwordHash is bcrypt. If OAuth is ever added, restore the
+ * full Auth.js adapter table set then.
+ * ========================================================== */
+export const users = pgTable('users', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').unique().notNull(),
+  passwordHash: text('password_hash').notNull(),               // bcrypt
+  name: text('name'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/* ============================================================
  * RELATIONS — Drizzle's relation helpers for type-safe joins
  * ========================================================== */
 export const companiesRelations = relations(companies, ({ many }) => ({

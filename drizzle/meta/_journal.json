@@ -8,6 +8,20 @@
       "when": 1780932922964,
       "tag": "0000_clever_psylocke",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780934422285,
+      "tag": "0001_polite_lethal_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780935390124,
+      "tag": "0002_public_inhumans",
+      "breakpoints": true
     }
   ]
 }
