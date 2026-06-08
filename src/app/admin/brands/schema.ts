@@ -22,6 +22,13 @@ const optionalUrl = z
   .nullable()
   .optional();
 
+// Multi-line textarea -> string[] (one item per line), or null if empty.
+const linesToArray = z
+  .string()
+  .transform((v) => v.split('\n').map((s) => s.trim()).filter(Boolean))
+  .transform((arr) => (arr.length ? arr : null))
+  .nullable();
+
 export const brandSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
   // Optional here; the action derives it from the name when omitted.
@@ -49,11 +56,21 @@ export const brandSchema = z.object({
   affiliateProgram: optionalText,
   defaultAffiliateLink: optionalUrl,
   shortDescription: optionalText,
+  introParagraph: optionalText,
   fullDescription: optionalText,
   yearFounded: z.coerce.number().int().min(1800).max(2100).nullable().optional(),
   launchDate: z.coerce.date().nullable().optional(),
   sunsetDate: z.coerce.date().nullable().optional(),
   notes: optionalText,
+  // Structured review content (Sprint B)
+  howToClaimSteps: linesToArray,
+  pros: linesToArray,
+  cons: linesToArray,
+  verdict: optionalText,
+  otherPromotions: linesToArray,
+  depositOptions: optionalText, // comma-separated text
+  primaryAuthorId: optionalText, // author uuid or null
+  secondaryAuthorId: optionalText,
 });
 
 export type BrandInput = z.infer<typeof brandSchema>;
@@ -100,10 +117,19 @@ export function brandFormToRaw(formData: FormData) {
     affiliateProgram: str('affiliateProgram'),
     defaultAffiliateLink: str('defaultAffiliateLink'),
     shortDescription: str('shortDescription'),
+    introParagraph: str('introParagraph'),
     fullDescription: str('fullDescription'),
     yearFounded: blankToUndef('yearFounded'),
     launchDate: blankToUndef('launchDate'),
     sunsetDate: blankToUndef('sunsetDate'),
     notes: str('notes'),
+    howToClaimSteps: str('howToClaimSteps'),
+    pros: str('pros'),
+    cons: str('cons'),
+    verdict: str('verdict'),
+    otherPromotions: str('otherPromotions'),
+    depositOptions: str('depositOptions'),
+    primaryAuthorId: str('primaryAuthorId'),
+    secondaryAuthorId: str('secondaryAuthorId'),
   };
 }

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, ne } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, companies } from '@/db/schema';
+import { brands, companies, authors } from '@/db/schema';
 import { Button } from '@/components/ui/button';
 import { updateBrand, softDeleteBrand, uploadBrandLogo } from '../../actions';
 import { BrandForm, type BrandFormValues } from '../../brand-form';
@@ -25,7 +25,7 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
   const [brand] = await db.select().from(brands).where(eq(brands.id, id)).limit(1);
   if (!brand) notFound();
 
-  const [companyRows, candidateRows] = await Promise.all([
+  const [companyRows, candidateRows, authorRows] = await Promise.all([
     db.select({ id: companies.id, name: companies.name }).from(companies).orderBy(companies.name),
     // Candidates exclude planned brands AND this brand itself.
     db
@@ -33,6 +33,7 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
       .from(brands)
       .where(and(ne(brands.status, 'planned'), ne(brands.id, id)))
       .orderBy(brands.name),
+    db.select({ id: authors.id, name: authors.name }).from(authors).orderBy(asc(authors.name)),
   ]);
 
   const values: BrandFormValues = {
@@ -54,6 +55,15 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
     launchDate: toDateInput(brand.launchDate),
     sunsetDate: toDateInput(brand.sunsetDate),
     notes: brand.notes ?? '',
+    introParagraph: brand.introParagraph ?? '',
+    howToClaimSteps: (brand.howToClaimSteps ?? []).join('\n'),
+    pros: (brand.pros ?? []).join('\n'),
+    cons: (brand.cons ?? []).join('\n'),
+    verdict: brand.verdict ?? '',
+    otherPromotions: (brand.otherPromotions ?? []).join('\n'),
+    depositOptions: brand.depositOptions ?? '',
+    primaryAuthorId: brand.primaryAuthorId ?? '',
+    secondaryAuthorId: brand.secondaryAuthorId ?? '',
   };
 
   return (
@@ -82,6 +92,7 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
         action={updateBrand.bind(null, id)}
         companies={companyRows.map((c) => ({ value: String(c.id), label: c.name }))}
         rebrandCandidates={candidateRows.map((b) => ({ value: String(b.id), label: b.name }))}
+        authorsOptions={authorRows.map((a) => ({ value: a.id, label: a.name }))}
         categories={CATEGORY_VALUES}
         statuses={STATUS_VALUES}
         values={values}

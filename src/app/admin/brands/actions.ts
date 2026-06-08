@@ -2,12 +2,13 @@
 
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { and, eq, ne } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { brands, companies } from '@/db/schema';
+import { brands, companies, authors } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
+import { slugTaken } from '@/lib/slug-check';
 import {
   brandSchema,
   brandFormToRaw,
@@ -37,6 +38,15 @@ function toColumns(data: BrandInput, slug: string) {
     launchDate: data.launchDate ?? null,
     sunsetDate: data.sunsetDate ?? null,
     notes: data.notes ?? null,
+    introParagraph: data.introParagraph ?? null,
+    howToClaimSteps: data.howToClaimSteps ?? null,
+    pros: data.pros ?? null,
+    cons: data.cons ?? null,
+    verdict: data.verdict ?? null,
+    otherPromotions: data.otherPromotions ?? null,
+    depositOptions: data.depositOptions ?? null,
+    primaryAuthorId: data.primaryAuthorId ?? null,
+    secondaryAuthorId: data.secondaryAuthorId ?? null,
   };
 }
 
@@ -73,6 +83,17 @@ async function checkReferences(
     }
   }
 
+  for (const key of ['primaryAuthorId', 'secondaryAuthorId'] as const) {
+    const id = data[key];
+    if (id) {
+      const [a] = await db.select({ id: authors.id }).from(authors).where(eq(authors.id, id)).limit(1);
+      if (!a) errors[key] = ['Selected author no longer exists'];
+    }
+  }
+  if (data.primaryAuthorId && data.primaryAuthorId === data.secondaryAuthorId) {
+    errors.secondaryAuthorId = ['Secondary author must differ from primary'];
+  }
+
   return Object.keys(errors).length ? errors : null;
 }
 
@@ -86,11 +107,10 @@ async function resolveSlug(
   if (!slug || !isValidSlug(slug)) {
     return { errors: { slug: ['Could not derive a valid slug from the name — enter one manually'] } };
   }
-  const where = excludeId
-    ? and(eq(brands.slug, slug), ne(brands.id, excludeId))
-    : eq(brands.slug, slug);
-  const [clash] = await db.select({ id: brands.id }).from(brands).where(where).limit(1);
-  if (clash) return { errors: { slug: ['That slug is already in use'] } };
+  // Slug must be unique across brands AND articles (shared root URL namespace).
+  if (await slugTaken(slug, { exceptBrandId: excludeId })) {
+    return { errors: { slug: ['That slug is already used by another brand or an article'] } };
+  }
   return { slug };
 }
 

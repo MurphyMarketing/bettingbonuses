@@ -37,12 +37,23 @@ export type BrandFormValues = {
   launchDate: string;
   sunsetDate: string;
   notes: string;
+  // Sprint B review content (arrays edited as one-item-per-line text)
+  introParagraph: string;
+  howToClaimSteps: string;
+  pros: string;
+  cons: string;
+  verdict: string;
+  otherPromotions: string;
+  depositOptions: string;
+  primaryAuthorId: string;
+  secondaryAuthorId: string;
 };
 
 type BrandFormProps = {
   action: (prev: BrandFormState, formData: FormData) => Promise<BrandFormState>;
   companies: Option[];
   rebrandCandidates: Option[];
+  authorsOptions: Option[];
   categories: readonly string[];
   statuses: readonly string[];
   values: BrandFormValues;
@@ -78,6 +89,7 @@ export function BrandForm({
   action,
   companies,
   rebrandCandidates,
+  authorsOptions,
   categories,
   statuses,
   values,
@@ -246,9 +258,57 @@ export function BrandForm({
         <Field label="Full description" htmlFor="fullDescription" errors={errs.fullDescription}>
           <Textarea id="fullDescription" name="fullDescription" rows={5} defaultValue={values.fullDescription} />
         </Field>
+        <Field label="Intro paragraph" htmlFor="introParagraph" errors={errs.introParagraph} hint="200–300 word brand intro shown near the top of the brand page.">
+          <Textarea id="introParagraph" name="introParagraph" rows={4} defaultValue={values.introParagraph} />
+        </Field>
         <Field label="Internal notes" htmlFor="notes" errors={errs.notes}>
           <Textarea id="notes" name="notes" rows={2} defaultValue={values.notes} />
         </Field>
+      </section>
+
+      {/* Review content (Sprint B) */}
+      <section className="flex flex-col gap-4 rounded-lg border p-4">
+        <h2 className="text-sm font-medium">Review content</h2>
+        <Field label="How to claim — steps" htmlFor="howToClaimSteps" errors={errs.howToClaimSteps} hint="One step per line.">
+          <Textarea id="howToClaimSteps" name="howToClaimSteps" rows={4} defaultValue={values.howToClaimSteps} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Pros" htmlFor="pros" errors={errs.pros} hint="One per line.">
+            <Textarea id="pros" name="pros" rows={4} defaultValue={values.pros} />
+          </Field>
+          <Field label="Cons" htmlFor="cons" errors={errs.cons} hint="One per line.">
+            <Textarea id="cons" name="cons" rows={4} defaultValue={values.cons} />
+          </Field>
+        </div>
+        <Field label="Verdict" htmlFor="verdict" errors={errs.verdict}>
+          <Textarea id="verdict" name="verdict" rows={3} defaultValue={values.verdict} />
+        </Field>
+        <Field label="Other promotions" htmlFor="otherPromotions" errors={errs.otherPromotions} hint="One per line.">
+          <Textarea id="otherPromotions" name="otherPromotions" rows={3} defaultValue={values.otherPromotions} />
+        </Field>
+        <Field label="Deposit options" htmlFor="depositOptions" errors={errs.depositOptions} hint="Comma-separated, e.g. Visa, PayPal, ACH.">
+          <Input id="depositOptions" name="depositOptions" defaultValue={values.depositOptions} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Primary author" errors={errs.primaryAuthorId}>
+            <Select name="primaryAuthorId" defaultValue={values.primaryAuthorId || ''}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="— None —" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— None —</SelectItem>
+                {authorsOptions.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Secondary author" errors={errs.secondaryAuthorId}>
+            <Select name="secondaryAuthorId" defaultValue={values.secondaryAuthorId || ''}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="— None —" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— None —</SelectItem>
+                {authorsOptions.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
       </section>
 
       <div className="flex gap-3">

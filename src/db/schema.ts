@@ -62,6 +62,9 @@ export const userSegmentEnum = pgEnum('user_segment', [
   'all',       // applies to both
 ]);
 
+export const articleCategoryEnum = pgEnum('article_category', ['guide', 'news', 'comparison']);
+export const articleStatusEnum = pgEnum('article_status', ['draft', 'published', 'archived']);
+
 /* ============================================================
  * COMPANIES — informational entity for cross-brand relatedness
  * ========================================================== */
@@ -106,8 +109,21 @@ export const brands = pgTable('brands', {
 
   // Editorial
   shortDescription: text('short_description'),
+  introParagraph: text('intro_paragraph'),                     // 200-300 word brand intro
   fullDescription: text('full_description'),                   // long-form for brand page
   yearFounded: integer('year_founded'),
+
+  // Structured review content (all nullable; admin-edited)
+  howToClaimSteps: jsonb('how_to_claim_steps').$type<string[]>(),
+  pros: jsonb('pros').$type<string[]>(),
+  cons: jsonb('cons').$type<string[]>(),
+  verdict: text('verdict'),                                    // short ranking/verdict paragraph
+  otherPromotions: jsonb('other_promotions').$type<string[]>(),
+  depositOptions: text('deposit_options'),                     // comma-separated list
+
+  // Authors (E-E-A-T): FK to authors
+  primaryAuthorId: text('primary_author_id').references(() => authors.id),
+  secondaryAuthorId: text('secondary_author_id').references(() => authors.id),
 
   // Lifecycle
   launchDate: timestamp('launch_date', { withTimezone: true }),
@@ -347,6 +363,48 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+/* ============================================================
+ * AUTHORS — E-E-A-T editorial bylines.
+ * ========================================================== */
+export const authors = pgTable('authors', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  slug: varchar('slug', { length: 100 }).unique().notNull(),
+  name: text('name').notNull(),
+  title: text('title'),                                        // "Co-founder, BettingBonuses.com"
+  bio: text('bio'),                                            // markdown
+  avatarUrl: text('avatar_url'),
+  credentials: text('credentials'),                            // "Regulated online betting since 2008"
+  isActive: boolean('is_active').notNull().default(true),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/* ============================================================
+ * ARTICLES — editorial content (guides, news, comparisons).
+ * Root-level slugs (e.g. /wagering-requirements/); slug must be globally
+ * unique across articles AND brands (enforced in the create/update flows).
+ * ========================================================== */
+export const articles = pgTable('articles', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  slug: varchar('slug', { length: 100 }).unique().notNull(),
+  title: text('title').notNull(),
+  metaDescription: text('meta_description'),
+  excerpt: text('excerpt'),
+  body: text('body'),                                          // markdown
+  category: articleCategoryEnum('category').notNull().default('guide'),
+  primaryAuthorId: text('primary_author_id').references(() => authors.id),
+  secondaryAuthorId: text('secondary_author_id').references(() => authors.id),
+  status: articleStatusEnum('status').notNull().default('draft'),
+  readingTimeMinutes: integer('reading_time_minutes'),         // auto-calculated from body
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index('articles_status_idx').on(table.status),
+  categoryIdx: index('articles_category_idx').on(table.category),
+}));
 
 /* ============================================================
  * RELATIONS — Drizzle's relation helpers for type-safe joins
