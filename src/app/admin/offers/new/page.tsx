@@ -14,7 +14,7 @@ const EMPTY: OfferFormValues = {
   brandId: '', bonusKind: '', userSegment: 'new', eventId: '', seriesId: '', sportId: '',
   code: '', headline: '', description: '', bonusAmountCents: '', bonusMaxCents: '',
   qualifyingDepositCents: '', qualifyingBetCents: '', wageringRequirementMultiplier: '',
-  termsUrl: '', termsSummary: '', affiliateUrl: '', isExclusive: false, validFrom: '',
+  termsUrl: '', termsSummary: '', responsibleGamblingDisclaimer: '', affiliateUrl: '', isExclusive: false, validFrom: '',
   validTo: '', verificationNotes: '', priority: '0', isFeatured: false, status: 'draft', attributes: '',
 };
 

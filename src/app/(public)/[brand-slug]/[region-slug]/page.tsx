@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { brands, brandRegions, offers, offerRegions, regions } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 export const revalidate = 3600; // ISR: 1 hour
@@ -84,6 +85,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
         code: offers.code,
         bonusAmountCents: offers.bonusAmountCents,
         termsSummary: offers.termsSummary,
+        responsibleGamblingDisclaimer: offers.responsibleGamblingDisclaimer,
         validFrom: offers.validFrom,
         validTo: offers.validTo,
         lastVerifiedAt: offers.lastVerifiedAt,
@@ -98,7 +100,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
       )
       .orderBy(desc(offers.priority), desc(offers.lastVerifiedAt)),
     db
-      .select({ slug: regions.slug, name: regions.name })
+      .select({ slug: regions.slug, name: regions.name, code: regions.code })
       .from(brandRegions)
       .innerJoin(regions, eq(brandRegions.regionId, regions.id))
       .where(and(eq(brandRegions.brandId, brand.id), eq(brandRegions.isActive, true), ne(regions.id, region.id)))
@@ -109,6 +111,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
   ]);
 
   const successor = successorRows[0];
+  const otherRegionSlugByCode = new Map(otherRegions.map((r) => [r.code, r.slug]));
   const hotline = region.problemGamblingHotline ?? '1-800-GAMBLER';
   const launchedOn = link.launchedAt
     ? link.launchedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -121,6 +124,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
     code: o.code,
     bonusAmountCents: o.bonusAmountCents,
     termsSummary: o.termsSummary,
+    responsibleGamblingDisclaimer: o.responsibleGamblingDisclaimer,
     validTo: o.validTo,
     lastVerifiedAt: o.lastVerifiedAt,
   });
@@ -202,18 +206,13 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
       {otherRegions.length ? (
         <section className="mt-10">
           <h2 className="mb-4 text-xl font-semibold">Other states where {brand.name} operates</h2>
-          <ul className="flex flex-wrap gap-2">
-            {otherRegions.map((r) => (
-              <li key={r.slug}>
-                <Link
-                  href={`/${brand.slug}/${r.slug}/`}
-                  className="inline-block rounded-md border px-2.5 py-1 text-sm hover:bg-muted"
-                >
-                  {r.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <StateAvailabilityGrid
+            codes={otherRegions.map((r) => r.code)}
+            hrefFor={(code) => {
+              const slug = otherRegionSlugByCode.get(code);
+              return slug ? `/${brand.slug}/${slug}/` : undefined;
+            }}
+          />
         </section>
       ) : null}
 

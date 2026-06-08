@@ -45,8 +45,7 @@ export const brandSchema = z.object({
   websiteUrl: optionalUrl,
   appStoreUrl: optionalUrl,
   playStoreUrl: optionalUrl,
-  logoUrl: optionalText,
-  logoSquareUrl: optionalText,
+  // logoUrl / logoSquareUrl are managed by the logo-upload action, not this form.
   affiliateProgram: optionalText,
   defaultAffiliateLink: optionalUrl,
   shortDescription: optionalText,
@@ -98,8 +97,6 @@ export function brandFormToRaw(formData: FormData) {
     websiteUrl: str('websiteUrl'),
     appStoreUrl: str('appStoreUrl'),
     playStoreUrl: str('playStoreUrl'),
-    logoUrl: str('logoUrl'),
-    logoSquareUrl: str('logoSquareUrl'),
     affiliateProgram: str('affiliateProgram'),
     defaultAffiliateLink: str('defaultAffiliateLink'),
     shortDescription: str('shortDescription'),

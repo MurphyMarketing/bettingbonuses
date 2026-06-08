@@ -5,8 +5,9 @@ import { and, eq, ne } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands, companies } from '@/db/schema';
 import { Button } from '@/components/ui/button';
-import { updateBrand, softDeleteBrand } from '../../actions';
+import { updateBrand, softDeleteBrand, uploadBrandLogo } from '../../actions';
 import { BrandForm, type BrandFormValues } from '../../brand-form';
+import { LogoUpload } from '../../logo-upload';
 import { CATEGORY_VALUES, STATUS_VALUES } from '../../schema';
 
 export const metadata: Metadata = { title: 'Edit brand', robots: { index: false, follow: false } };
@@ -45,8 +46,6 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
     websiteUrl: brand.websiteUrl ?? '',
     appStoreUrl: brand.appStoreUrl ?? '',
     playStoreUrl: brand.playStoreUrl ?? '',
-    logoUrl: brand.logoUrl ?? '',
-    logoSquareUrl: brand.logoSquareUrl ?? '',
     affiliateProgram: brand.affiliateProgram ?? '',
     defaultAffiliateLink: brand.defaultAffiliateLink ?? '',
     shortDescription: brand.shortDescription ?? '',
@@ -66,6 +65,18 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
         <h1 className="mt-1 text-2xl font-semibold">{brand.name}</h1>
         <p className="text-sm text-muted-foreground">/{brand.slug}</p>
       </div>
+
+      <section className="mb-8 rounded-lg border p-4">
+        <h2 className="mb-1 text-sm font-medium">Logo</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Saved to /public/logos/{brand.slug}. Used on the public brand page and category cards.
+        </p>
+        <LogoUpload
+          action={uploadBrandLogo.bind(null, id)}
+          logoUrl={brand.logoUrl}
+          logoSquareUrl={brand.logoSquareUrl}
+        />
+      </section>
 
       <BrandForm
         action={updateBrand.bind(null, id)}

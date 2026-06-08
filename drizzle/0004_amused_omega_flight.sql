@@ -1,0 +1,1 @@
+ALTER TABLE "offers" ADD COLUMN "responsible_gambling_disclaimer" text;

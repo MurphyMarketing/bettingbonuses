@@ -9,6 +9,7 @@ import { brands, brandRegions, companies, offers, regions } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 export const revalidate = 3600; // ISR: 1 hour (on-demand revalidation comes later)
@@ -68,6 +69,7 @@ export default async function BrandPage({ params }: { params: Params }) {
         code: offers.code,
         bonusAmountCents: offers.bonusAmountCents,
         termsSummary: offers.termsSummary,
+        responsibleGamblingDisclaimer: offers.responsibleGamblingDisclaimer,
         validFrom: offers.validFrom,
         validTo: offers.validTo,
         lastVerifiedAt: offers.lastVerifiedAt,
@@ -101,6 +103,7 @@ export default async function BrandPage({ params }: { params: Params }) {
   const companyName = company[0]?.name;
   const hero = activeOffers[0];
   const rest = activeOffers.slice(1);
+  const regionSlugByCode = new Map(regionRows.map((r) => [r.code, r.slug]));
 
   const productLd = {
     '@context': 'https://schema.org',
@@ -132,6 +135,7 @@ export default async function BrandPage({ params }: { params: Params }) {
     code: o.code,
     bonusAmountCents: o.bonusAmountCents,
     termsSummary: o.termsSummary,
+    responsibleGamblingDisclaimer: o.responsibleGamblingDisclaimer,
     validTo: o.validTo,
     lastVerifiedAt: o.lastVerifiedAt,
   });
@@ -147,6 +151,12 @@ export default async function BrandPage({ params }: { params: Params }) {
             View the current {successor.name} page →
           </Link>
         </div>
+      ) : null}
+
+      {/* Logo */}
+      {brand.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- static logo asset
+        <img src={brand.logoUrl} alt={`${brand.name} logo`} className="mb-4 h-12 w-auto" />
       ) : null}
 
       {/* H1 + category tag */}
@@ -184,18 +194,13 @@ export default async function BrandPage({ params }: { params: Params }) {
       {regionRows.length ? (
         <section className="mt-10">
           <h2 className="mb-4 text-xl font-semibold">Where {brand.name} operates</h2>
-          <ul className="flex flex-wrap gap-2">
-            {regionRows.map((r) => (
-              <li key={r.slug}>
-                <Link
-                  href={`/${brand.slug}/${r.slug}/`}
-                  className="inline-block rounded-md border px-2.5 py-1 text-sm hover:bg-muted"
-                >
-                  {r.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <StateAvailabilityGrid
+            codes={regionRows.map((r) => r.code)}
+            hrefFor={(code) => {
+              const slug = regionSlugByCode.get(code);
+              return slug ? `/${brand.slug}/${slug}/` : undefined;
+            }}
+          />
         </section>
       ) : null}
 

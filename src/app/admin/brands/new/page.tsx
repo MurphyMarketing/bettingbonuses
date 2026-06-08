@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic';
 
 const EMPTY: BrandFormValues = {
   name: '', slug: '', category: '', status: 'active', companyId: '', rebrandedFromId: '',
-  countryCode: 'US', websiteUrl: '', appStoreUrl: '', playStoreUrl: '', logoUrl: '',
-  logoSquareUrl: '', affiliateProgram: '', defaultAffiliateLink: '', shortDescription: '',
+  countryCode: 'US', websiteUrl: '', appStoreUrl: '', playStoreUrl: '',
+  affiliateProgram: '', defaultAffiliateLink: '', shortDescription: '',
   fullDescription: '', yearFounded: '', launchDate: '', sunsetDate: '', notes: '',
 };
 

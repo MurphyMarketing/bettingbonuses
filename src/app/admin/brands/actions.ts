@@ -1,5 +1,7 @@
 'use server';
 
+import { writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -27,8 +29,6 @@ function toColumns(data: BrandInput, slug: string) {
     websiteUrl: data.websiteUrl ?? null,
     appStoreUrl: data.appStoreUrl ?? null,
     playStoreUrl: data.playStoreUrl ?? null,
-    logoUrl: data.logoUrl ?? null,
-    logoSquareUrl: data.logoSquareUrl ?? null,
     affiliateProgram: data.affiliateProgram ?? null,
     defaultAffiliateLink: data.defaultAffiliateLink ?? null,
     shortDescription: data.shortDescription ?? null,
@@ -155,4 +155,66 @@ export async function softDeleteBrand(id: number): Promise<void> {
     .where(eq(brands.id, id));
   revalidatePath('/admin/brands');
   redirect('/admin/brands');
+}
+
+/* ------------------------------------------------------------------ *
+ * Logo upload
+ * ------------------------------------------------------------------ */
+export type LogoUploadState = { error?: string; ok?: boolean };
+
+const LOGO_MAX_BYTES = 500 * 1024; // 500KB
+const LOGO_MIME_EXT: Record<string, string> = {
+  'image/svg+xml': 'svg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+/**
+ * Save uploaded logo file(s) to /public/logos and point the brand at them.
+ * Files are named by brand slug so they overwrite on re-upload. Writes to the
+ * repo's public/ dir — fine in local/dev (then commit the asset); note that a
+ * read-only/ephemeral host filesystem won't persist runtime uploads.
+ */
+export async function uploadBrandLogo(
+  id: number,
+  _prev: LogoUploadState,
+  formData: FormData,
+): Promise<LogoUploadState> {
+  const [brand] = await db.select({ slug: brands.slug }).from(brands).where(eq(brands.id, id)).limit(1);
+  if (!brand) return { error: 'Brand not found.' };
+
+  const fields: { input: string; column: 'logoUrl' | 'logoSquareUrl'; suffix: string }[] = [
+    { input: 'logo', column: 'logoUrl', suffix: '' },
+    { input: 'logoSquare', column: 'logoSquareUrl', suffix: '-square' },
+  ];
+
+  const updates: Partial<Record<'logoUrl' | 'logoSquareUrl', string>> = {};
+  const dir = path.join(process.cwd(), 'public', 'logos');
+
+  for (const { input, column, suffix } of fields) {
+    const file = formData.get(input);
+    if (!(file instanceof File) || file.size === 0) continue; // nothing uploaded for this slot
+
+    if (file.size > LOGO_MAX_BYTES) {
+      return { error: `${input === 'logo' ? 'Logo' : 'Square logo'} is larger than 500KB.` };
+    }
+    const ext = LOGO_MIME_EXT[file.type];
+    if (!ext) {
+      return { error: `${input === 'logo' ? 'Logo' : 'Square logo'} must be SVG, PNG, or WebP.` };
+    }
+
+    const filename = `${brand.slug}${suffix}.${ext}`;
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
+    updates[column] = `/logos/${filename}`;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { error: 'Choose a file to upload first.' };
+  }
+
+  await db.update(brands).set({ ...updates, updatedAt: new Date() }).where(eq(brands.id, id));
+  revalidatePath(`/admin/brands/${id}/edit`);
+  revalidatePath(`/${brand.slug}/`); // public brand page (ISR)
+  return { ok: true };
 }

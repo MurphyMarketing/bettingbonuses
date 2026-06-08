@@ -56,6 +56,8 @@ export default async function CategoryHubPage({ params }: { params: Params }) {
       slug: brands.slug,
       name: brands.name,
       shortDescription: brands.shortDescription,
+      logoSquareUrl: brands.logoSquareUrl,
+      logoUrl: brands.logoUrl,
     })
     .from(brands)
     .where(and(eq(brands.category, cfg.category), eq(brands.status, 'active')))
@@ -72,9 +74,17 @@ export default async function CategoryHubPage({ params }: { params: Params }) {
         {categoryBrands.map((b) => (
           <Card key={b.slug} className="flex flex-col">
             <CardHeader>
-              {/* Logo placeholder until real assets land. */}
-              <div className="mb-2 flex size-10 items-center justify-center rounded-md bg-muted text-sm font-semibold text-muted-foreground">
-                {b.name.charAt(0)}
+              <div className="mb-2 flex size-10 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
+                {b.logoSquareUrl || b.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- static logo asset
+                  <img
+                    src={(b.logoSquareUrl ?? b.logoUrl)!}
+                    alt={`${b.name} logo`}
+                    className="size-full object-contain"
+                  />
+                ) : (
+                  b.name.charAt(0)
+                )}
               </div>
               <CardTitle className="text-base">
                 <Link href={`/${b.slug}/`} className="hover:underline">

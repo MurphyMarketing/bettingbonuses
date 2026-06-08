@@ -33,6 +33,7 @@ function toColumns(data: OfferInput, validTo: Date | null) {
     wageringRequirementMultiplier: data.wageringRequirementMultiplier ?? null,
     termsUrl: data.termsUrl ?? null,
     termsSummary: data.termsSummary ?? null,
+    responsibleGamblingDisclaimer: data.responsibleGamblingDisclaimer ?? null,
     affiliateUrl: data.affiliateUrl ?? null,
     isExclusive: data.isExclusive,
     validFrom: data.validFrom ?? null,

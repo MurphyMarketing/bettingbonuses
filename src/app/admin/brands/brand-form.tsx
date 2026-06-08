@@ -29,8 +29,6 @@ export type BrandFormValues = {
   websiteUrl: string;
   appStoreUrl: string;
   playStoreUrl: string;
-  logoUrl: string;
-  logoSquareUrl: string;
   affiliateProgram: string;
   defaultAffiliateLink: string;
   shortDescription: string;
@@ -224,12 +222,6 @@ export function BrandForm({
         </Field>
         <Field label="Play Store URL" htmlFor="playStoreUrl" errors={errs.playStoreUrl}>
           <Input id="playStoreUrl" name="playStoreUrl" type="url" defaultValue={values.playStoreUrl} />
-        </Field>
-        <Field label="Logo URL" htmlFor="logoUrl" errors={errs.logoUrl}>
-          <Input id="logoUrl" name="logoUrl" defaultValue={values.logoUrl} />
-        </Field>
-        <Field label="Square logo URL" htmlFor="logoSquareUrl" errors={errs.logoSquareUrl}>
-          <Input id="logoSquareUrl" name="logoSquareUrl" defaultValue={values.logoSquareUrl} />
         </Field>
         <Field label="Affiliate program" htmlFor="affiliateProgram" errors={errs.affiliateProgram}>
           <Input id="affiliateProgram" name="affiliateProgram" defaultValue={values.affiliateProgram} />

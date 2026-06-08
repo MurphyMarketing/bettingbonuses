@@ -41,6 +41,7 @@ export default async function HomePage() {
         code: offers.code,
         bonusAmountCents: offers.bonusAmountCents,
         termsSummary: offers.termsSummary,
+        responsibleGamblingDisclaimer: offers.responsibleGamblingDisclaimer,
         validTo: offers.validTo,
         lastVerifiedAt: offers.lastVerifiedAt,
         brandSlug: brands.slug,
@@ -71,6 +72,7 @@ export default async function HomePage() {
         code: featured.code,
         bonusAmountCents: featured.bonusAmountCents,
         termsSummary: featured.termsSummary,
+        responsibleGamblingDisclaimer: featured.responsibleGamblingDisclaimer,
         validTo: featured.validTo,
         lastVerifiedAt: featured.lastVerifiedAt,
       }

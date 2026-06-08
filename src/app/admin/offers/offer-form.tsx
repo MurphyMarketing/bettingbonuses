@@ -28,6 +28,7 @@ export type OfferFormValues = {
   wageringRequirementMultiplier: string;
   termsUrl: string;
   termsSummary: string;
+  responsibleGamblingDisclaimer: string;
   affiliateUrl: string;
   isExclusive: boolean;
   validFrom: string;
@@ -252,6 +253,19 @@ export function OfferForm({
       </section>
       <Field label="Terms summary" htmlFor="termsSummary" errors={errs.termsSummary}>
         <Textarea id="termsSummary" name="termsSummary" rows={2} defaultValue={values.termsSummary} />
+      </Field>
+      <Field
+        label="Responsible gambling disclaimer"
+        htmlFor="responsibleGamblingDisclaimer"
+        errors={errs.responsibleGamblingDisclaimer}
+        hint="Operator's exact RG copy; rendered verbatim under the offer."
+      >
+        <Textarea
+          id="responsibleGamblingDisclaimer"
+          name="responsibleGamblingDisclaimer"
+          rows={2}
+          defaultValue={values.responsibleGamblingDisclaimer}
+        />
       </Field>
 
       {/* Validity */}

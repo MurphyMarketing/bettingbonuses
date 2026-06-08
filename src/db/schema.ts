@@ -245,6 +245,7 @@ export const offers = pgTable('offers', {
   // Terms & affiliate plumbing
   termsUrl: text('terms_url'),                                 // link to operator's T&Cs
   termsSummary: text('terms_summary'),                         // our editorial summary
+  responsibleGamblingDisclaimer: text('responsible_gambling_disclaimer'), // operator's exact RG copy, per offer
   affiliateUrl: text('affiliate_url'),                         // deeplink (overrides brand default)
   isExclusive: boolean('is_exclusive').notNull().default(false),
 

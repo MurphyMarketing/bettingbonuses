@@ -49,6 +49,7 @@ export default async function EditOfferPage({ params }: { params: Promise<{ id: 
     wageringRequirementMultiplier: offer.wageringRequirementMultiplier != null ? String(offer.wageringRequirementMultiplier) : '',
     termsUrl: offer.termsUrl ?? '',
     termsSummary: offer.termsSummary ?? '',
+    responsibleGamblingDisclaimer: offer.responsibleGamblingDisclaimer ?? '',
     affiliateUrl: offer.affiliateUrl ?? '',
     isExclusive: offer.isExclusive,
     validFrom: toDatetimeLocalInput(offer.validFrom),

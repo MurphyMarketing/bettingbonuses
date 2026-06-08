@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { formatUsdCents } from '@/lib/money';
 import { isStale, formatRelativeTime } from '@/lib/datetime';
 import { bonusKindLabel } from '@/app/admin/offers/labels';
+import { PromoCode } from '@/components/promo-code';
 
 export type PublicOffer = {
   id: number;
@@ -13,6 +14,7 @@ export type PublicOffer = {
   code: string | null;
   bonusAmountCents: number | null;
   termsSummary: string | null;
+  responsibleGamblingDisclaimer: string | null;
   validTo: Date | null;
   lastVerifiedAt: Date | null;
 };
@@ -64,14 +66,17 @@ export function OfferCard({
           <p className="text-sm text-muted-foreground">{offer.termsSummary}</p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {offer.code ? (
-            <span>
-              Code: <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{offer.code}</code>
-            </span>
-          ) : null}
-          {expires ? <span>Expires {expires}</span> : null}
-        </div>
+        {/* Promo code — prominent, copy-to-clipboard. */}
+        {offer.code ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Promo code</span>
+            <PromoCode code={offer.code} />
+          </div>
+        ) : null}
+
+        {expires ? (
+          <p className="text-sm text-muted-foreground">Expires {expires}</p>
+        ) : null}
 
         <div className="mt-1 flex items-center justify-between gap-3">
           <VerifiedSignal at={offer.lastVerifiedAt} />
@@ -84,6 +89,12 @@ export function OfferCard({
             }
           />
         </div>
+
+        {offer.responsibleGamblingDisclaimer ? (
+          <p className="mt-1 border-t pt-2 text-xs italic text-muted-foreground">
+            {offer.responsibleGamblingDisclaimer}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );
