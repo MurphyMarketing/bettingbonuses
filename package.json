@@ -15,7 +15,8 @@
     "create-admin": "tsx src/db/create-admin.ts",
     "migrate-logos": "tsx src/db/migrate-logos-to-storage.ts",
     "create-buckets": "tsx scripts/create-buckets.ts",
-    "migrate-articles-to-html": "tsx scripts/migrate-articles-to-html.ts"
+    "migrate-articles-to-html": "tsx scripts/migrate-articles-to-html.ts",
+    "seed:sports-events": "tsx scripts/seed-sports-events.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

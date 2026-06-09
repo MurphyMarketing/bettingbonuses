@@ -91,7 +91,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
   if (!ctx) {
     // Fallback: /[series-slug]/[event-slug] event instance page.
     const ev = await getVisibleEvent(brandSlug, regionSlug);
-    if (ev) return <EventView series={ev.series} event={ev.event} />;
+    if (ev) return <EventView series={ev.series} event={ev.event} sport={ev.sport} />;
     notFound();
   }
   const { brand, region, link } = ctx;

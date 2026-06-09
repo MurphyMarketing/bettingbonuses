@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { and, desc, eq, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { eventSeries, events, offers } from '@/db/schema';
+import { eventSeries, events, offers, sports } from '@/db/schema';
 import { OfferCard } from '@/components/offer-card';
 import { LocalDateTime } from '@/components/local-datetime';
 import { Badge } from '@/components/ui/badge';
@@ -12,13 +12,22 @@ import { eventTimeStatus, daysUntil } from '@/lib/event-time';
 const SITE_URL = 'https://www.bettingbonuses.com';
 type EventRow = typeof events.$inferSelect;
 type SeriesRow = typeof eventSeries.$inferSelect;
+type SportInfo = { name: string; fullName: string | null } | null;
 
-export async function getVisibleEvent(seriesSlug: string, eventSlug: string): Promise<{ series: SeriesRow; event: EventRow } | null> {
+export async function getVisibleEvent(
+  seriesSlug: string,
+  eventSlug: string,
+): Promise<{ series: SeriesRow; event: EventRow; sport: SportInfo } | null> {
   const [series] = await db.select().from(eventSeries).where(eq(eventSeries.slug, seriesSlug)).limit(1);
   if (!series) return null;
   const [event] = await db.select().from(events).where(and(eq(events.slug, eventSlug), eq(events.seriesId, series.id))).limit(1);
   if (!event) return null;
-  return { series, event };
+  let sport: SportInfo = null;
+  if (series.sportId != null) {
+    const [sp] = await db.select({ name: sports.name, fullName: sports.fullName }).from(sports).where(eq(sports.id, series.sportId)).limit(1);
+    sport = sp ?? null;
+  }
+  return { series, event, sport };
 }
 
 export function eventMetadata({ event, series }: { event: EventRow; series: SeriesRow }): Metadata {
@@ -38,7 +47,7 @@ function statusBadge(event: EventRow, now: Date) {
   return { label: ago <= 0 ? 'Recently concluded' : `Concluded ${ago} day${ago === 1 ? '' : 's'} ago`, variant: 'outline' as const };
 }
 
-export async function EventView({ series, event }: { series: SeriesRow; event: EventRow }) {
+export async function EventView({ series, event, sport }: { series: SeriesRow; event: EventRow; sport: SportInfo }) {
   const sportCond = series.sportId != null ? eq(offers.sportId, series.sportId) : undefined;
   const [offerCards, related] = await Promise.all([
     activeOfferCards(or(eq(offers.eventId, event.id), eq(offers.seriesId, series.id), sportCond)),
@@ -61,6 +70,7 @@ export async function EventView({ series, event }: { series: SeriesRow; event: E
     ...(event.location
       ? { location: { '@type': 'Place', name: placeName.trim(), ...(rest.length ? { address: rest.join(',').trim() } : {}) } }
       : {}),
+    ...(sport ? { organizer: { '@type': 'Organization', name: sport.fullName ?? sport.name } } : {}),
   };
   const itemListLd = {
     '@context': 'https://schema.org',
