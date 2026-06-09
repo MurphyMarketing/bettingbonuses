@@ -99,6 +99,13 @@
 			"when": 1780982827683,
 			"tag": "0013_brand_regions_updated_at_index",
 			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "7",
+			"when": 1780984150809,
+			"tag": "0014_sport_event_schema",
+			"breakpoints": true
 		}
 	]
 }

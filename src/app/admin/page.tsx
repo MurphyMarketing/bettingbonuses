@@ -14,8 +14,9 @@ export const dynamic = 'force-dynamic';
 
 const NAV = [
   ['Brands', '/admin/brands'], ['Offers', '/admin/offers'], ['Articles', '/admin/articles'],
-  ['Authors', '/admin/authors'], ['States', '/admin/states'], ['Affiliate links', '/admin/affiliate-links'],
-  ['Redirects', '/admin/redirects'], ['Content status', '/admin/content-status'],
+  ['Authors', '/admin/authors'], ['States', '/admin/states'],
+  ['Sports', '/admin/sports'], ['Event series', '/admin/event-series'], ['Events', '/admin/events'],
+  ['Affiliate links', '/admin/affiliate-links'], ['Redirects', '/admin/redirects'], ['Content status', '/admin/content-status'],
 ] as const;
 
 type Activity = { key: string; verb: 'Edited' | 'Created'; what: string; href: string; at: Date };

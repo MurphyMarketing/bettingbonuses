@@ -12,7 +12,7 @@
  */
 import {
   pgTable, pgEnum, serial, text, varchar, timestamp, boolean,
-  integer, jsonb, uniqueIndex, index, primaryKey, customType,
+  integer, jsonb, uniqueIndex, index, primaryKey, customType, check,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -200,6 +200,10 @@ export const sports = pgTable('sports', {
   fullName: text('full_name'),                                 // "National Hockey League"
   seasonStartMonth: integer('season_start_month'),             // 10 for NHL
   seasonEndMonth: integer('season_end_month'),                 // 6 for NHL
+  category: text('category'),                                  // grouping for the /sports/ index
+  displayOrder: integer('display_order').notNull().default(100),
+  intro: text('intro'),                                        // hub-page intro (HTML, sanitized)
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 /* ============================================================
@@ -212,6 +216,7 @@ export const eventSeries = pgTable('event_series', {
   slug: varchar('slug', { length: 100 }).unique().notNull(),   // "kentucky-derby"
   sportId: integer('sport_id').references(() => sports.id),
   description: text('description'),                            // for the evergreen hub page
+  intro: text('intro'),                                        // hub-page intro (HTML, sanitized)
   typicalMonth: integer('typical_month'),                      // 5 for Derby (May)
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -234,6 +239,7 @@ export const events = pgTable('events', {
   endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
 
   description: text('description'),
+  location: text('location'),                                  // "Levi's Stadium, Santa Clara, CA"
   isFeatured: boolean('is_featured').notNull().default(false),
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -241,6 +247,7 @@ export const events = pgTable('events', {
 }, (table) => ({
   seriesIdx: index('events_series_idx').on(table.seriesId),
   startsAtIdx: index('events_starts_at_idx').on(table.startsAt),
+  endsAtIdx: index('events_ends_at_idx').on(table.endsAt),
 }));
 
 /* ============================================================
@@ -305,6 +312,9 @@ export const offers = pgTable('offers', {
   validToIdx: index('offers_valid_to_idx').on(table.validTo),
   eventIdx: index('offers_event_idx').on(table.eventId),
   seriesIdx: index('offers_series_idx').on(table.seriesId),
+  sportIdx: index('offers_sport_idx').on(table.sportId),
+  // At most one targeting axis (sport / series / event) may be set.
+  singleTarget: check('offers_single_target', sql`num_nonnulls(${table.sportId}, ${table.seriesId}, ${table.eventId}) <= 1`),
 }));
 
 /* ============================================================
