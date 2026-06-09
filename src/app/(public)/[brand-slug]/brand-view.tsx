@@ -5,11 +5,10 @@ import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Check, X } from 'lucide-react';
 import { db } from '@/db';
-import { brands, brandRegions, companies, offers, regions, authors } from '@/db/schema';
+import { brands, companies, offers, authors } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
-import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
 import { categoryLabel } from '@/app/admin/brands/labels';
@@ -42,7 +41,7 @@ export function brandMetadata(brand: Brand): Metadata {
 export async function BrandView({ brand }: { brand: Brand }) {
   const authorIds = [brand.primaryAuthorId, brand.secondaryAuthorId].filter((x): x is string => Boolean(x));
 
-  const [activeOffers, regionRows, successorRows, company, related, authorRows] = await Promise.all([
+  const [activeOffers, successorRows, company, related, authorRows] = await Promise.all([
     db
       .select({
         id: offers.id,
@@ -59,12 +58,6 @@ export async function BrandView({ brand }: { brand: Brand }) {
       .from(offers)
       .where(and(eq(offers.brandId, brand.id), eq(offers.status, 'active')))
       .orderBy(desc(offers.priority), desc(offers.lastVerifiedAt)),
-    db
-      .select({ slug: regions.slug, name: regions.name, code: regions.code })
-      .from(brandRegions)
-      .innerJoin(regions, eq(brandRegions.regionId, regions.id))
-      .where(and(eq(brandRegions.brandId, brand.id), eq(brandRegions.isActive, true)))
-      .orderBy(regions.name),
     brand.status === 'rebranded'
       ? db.select({ slug: brands.slug, name: brands.name }).from(brands).where(eq(brands.rebrandedFromId, brand.id)).limit(1)
       : Promise.resolve([] as { slug: string; name: string }[]),
@@ -90,7 +83,6 @@ export async function BrandView({ brand }: { brand: Brand }) {
   const companyName = company[0]?.name;
   const hero = activeOffers[0];
   const rest = activeOffers.slice(1);
-  const regionSlugByCode = new Map(regionRows.map((r) => [r.code, r.slug]));
   const intro = brand.introParagraph ?? brand.shortDescription;
   const depositOptions = brand.depositOptions
     ? brand.depositOptions.split(',').map((s) => s.trim()).filter(Boolean)
@@ -268,20 +260,6 @@ export async function BrandView({ brand }: { brand: Brand }) {
               </li>
             ))}
           </ul>
-        </section>
-      ) : null}
-
-      {/* Where [Brand] operates */}
-      {regionRows.length ? (
-        <section className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">Where {brand.name} operates</h2>
-          <StateAvailabilityGrid
-            codes={regionRows.map((r) => r.code)}
-            hrefFor={(code) => {
-              const slug = regionSlugByCode.get(code);
-              return slug ? `/${brand.slug}/${slug}/` : undefined;
-            }}
-          />
         </section>
       ) : null}
 
