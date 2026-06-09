@@ -1,0 +1,83 @@
+'use server';
+
+import { eq, inArray } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { db } from '@/db';
+import { offers, brands, sports, eventSeries, events } from '@/db/schema';
+import { BONUS_KIND_VALUES } from '../schema';
+
+export type BulkState = { error?: string };
+
+const DAY = 24 * 60 * 60 * 1000;
+type BonusKind = (typeof BONUS_KIND_VALUES)[number];
+
+export async function bulkCreateOffers(_prev: BulkState, fd: FormData): Promise<BulkState> {
+  const targetType = String(fd.get('targetType') ?? '');
+  const targetId = Number(fd.get('targetId'));
+  const template = String(fd.get('headlineTemplate') ?? '').trim();
+  const bonusKind = String(fd.get('bonusKind') ?? '');
+  const validFromRaw = String(fd.get('validFrom') ?? '').trim();
+  const validToRaw = String(fd.get('validTo') ?? '').trim();
+  const brandIds = fd.getAll('brandIds').map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0);
+
+  if (!['event', 'series', 'sport'].includes(targetType)) return { error: 'Choose what to tie the offers to.' };
+  if (!Number.isInteger(targetId) || targetId <= 0) return { error: 'Select a target.' };
+  if (!brandIds.length) return { error: 'Select at least one brand.' };
+  if (!template) return { error: 'Enter a headline template.' };
+  if (!(BONUS_KIND_VALUES as readonly string[]).includes(bonusKind)) return { error: 'Choose a bonus type.' };
+
+  // Validate the target exists; capture event end for the valid-to default.
+  let eventEndsAt: Date | null = null;
+  if (targetType === 'sport') {
+    const [r] = await db.select({ id: sports.id }).from(sports).where(eq(sports.id, targetId)).limit(1);
+    if (!r) return { error: 'That sport no longer exists.' };
+  } else if (targetType === 'series') {
+    const [r] = await db.select({ id: eventSeries.id }).from(eventSeries).where(eq(eventSeries.id, targetId)).limit(1);
+    if (!r) return { error: 'That series no longer exists.' };
+  } else {
+    const [r] = await db.select({ id: events.id, endsAt: events.endsAt }).from(events).where(eq(events.id, targetId)).limit(1);
+    if (!r) return { error: 'That event no longer exists.' };
+    eventEndsAt = r.endsAt;
+  }
+
+  const validFrom = validFromRaw ? new Date(validFromRaw) : new Date();
+  const validTo = validToRaw
+    ? new Date(validToRaw)
+    : targetType === 'event' && eventEndsAt
+      ? new Date(eventEndsAt.getTime() + DAY)
+      : new Date(Date.now() + 30 * DAY);
+
+  const brandRows = await db.select({ id: brands.id, name: brands.name }).from(brands).where(inArray(brands.id, brandIds));
+  const nameById = new Map(brandRows.map((b) => [b.id, b.name]));
+
+  // Exactly one target FK — satisfies offers_single_target by construction.
+  const fk = targetType === 'sport' ? { sportId: targetId } : targetType === 'series' ? { seriesId: targetId } : { eventId: targetId };
+
+  const rows = brandIds
+    .filter((id) => nameById.has(id))
+    .map((id) => ({
+      brandId: id,
+      bonusKind: bonusKind as BonusKind,
+      userSegment: 'new' as const,
+      status: 'draft' as const, // scaffold — not public until completed + published
+      priority: 0,
+      headline: template.replaceAll('{brand}', nameById.get(id)!),
+      validFrom,
+      validTo,
+      ...fk,
+    }));
+
+  if (!rows.length) return { error: 'No valid brands selected.' };
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.insert(offers).values(rows);
+    });
+  } catch {
+    return { error: 'Could not create the offers. No partial batch was saved.' };
+  }
+
+  revalidatePath('/admin/offers');
+  redirect('/admin/offers');
+}

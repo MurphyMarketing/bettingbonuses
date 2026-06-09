@@ -52,7 +52,10 @@ export default async function OffersListPage() {
           <h1 className="text-2xl font-semibold">Offers</h1>
           <p className="text-sm text-muted-foreground">{rows.length} total</p>
         </div>
-        <Button render={<Link href="/admin/offers/new">New offer</Link>} />
+        <div className="flex items-center gap-3">
+          <Link href="/admin/offers/bulk-create" className="text-sm font-medium text-primary hover:underline">Bulk create</Link>
+          <Button render={<Link href="/admin/offers/new">New offer</Link>} />
+        </div>
       </div>
 
       <OffersTable rows={rows} />
