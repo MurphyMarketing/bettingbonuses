@@ -85,6 +85,20 @@
 			"when": 1780975970457,
 			"tag": "0011_brand_region_launch_metadata",
 			"breakpoints": true
+		},
+		{
+			"idx": 12,
+			"version": "7",
+			"when": 1780980135979,
+			"tag": "0012_ensure_updated_at_timestamps",
+			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1780982827683,
+			"tag": "0013_brand_regions_updated_at_index",
+			"breakpoints": true
 		}
 	]
 }

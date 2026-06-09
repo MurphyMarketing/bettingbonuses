@@ -1,0 +1,1 @@
+CREATE INDEX "brand_regions_updated_at_idx" ON "brand_regions" USING btree ("updated_at");

@@ -36,6 +36,7 @@ export async function updateBrandState(
         isNewLaunch,
         isActive: formData.get('isActive') != null,
         notes: str('notes') || null,
+        updatedAt: new Date(),
       })
       .where(and(eq(brandRegions.brandId, brandId), eq(brandRegions.regionId, regionId)));
   } catch {

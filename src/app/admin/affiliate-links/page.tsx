@@ -4,15 +4,14 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { affiliateLinks, brands } from '@/db/schema';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatRelativeTime } from '@/lib/datetime';
+import { AffiliateLinksTable, type AffiliateLinkRow } from './affiliate-links-table';
 
 export const metadata: Metadata = { title: 'Affiliate links', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function AffiliateLinksListPage() {
-  const rows = await db
+  const raw = await db
     .select({
       id: affiliateLinks.id,
       slug: affiliateLinks.slug,
@@ -26,6 +25,16 @@ export default async function AffiliateLinksListPage() {
     .leftJoin(brands, eq(affiliateLinks.brandId, brands.id))
     .orderBy(asc(affiliateLinks.slug));
 
+  const rows: AffiliateLinkRow[] = raw.map((l) => ({
+    id: l.id,
+    slug: l.slug,
+    destinationUrl: l.destinationUrl,
+    isActive: l.isActive,
+    clickCount: l.clickCount,
+    brandName: l.brandName,
+    lastClickedLabel: l.lastClickedAt ? formatRelativeTime(l.lastClickedAt) : '—',
+  }));
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -36,34 +45,7 @@ export default async function AffiliateLinksListPage() {
         <Button render={<Link href="/admin/affiliate-links/new">New link</Link>} />
       </div>
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Brand</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Destination</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Clicks</TableHead>
-              <TableHead>Last clicked</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell>{l.brandName ?? '—'}</TableCell>
-                <TableCell>
-                  <Link href={`/admin/affiliate-links/${l.id}/edit`} className="font-mono text-sm font-medium hover:underline">/go/{l.slug}</Link>
-                </TableCell>
-                <TableCell className="max-w-xs truncate text-sm text-muted-foreground">{l.destinationUrl}</TableCell>
-                <TableCell><Badge variant={l.isActive ? 'default' : 'destructive'}>{l.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
-                <TableCell className="text-right tabular-nums">{l.clickCount}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{l.lastClickedAt ? formatRelativeTime(l.lastClickedAt) : '—'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <AffiliateLinksTable rows={rows} />
     </main>
   );
 }

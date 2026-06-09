@@ -184,8 +184,10 @@ export const brandRegions = pgTable('brand_regions', {
   headlineOverride: text('headline_override'),                 // optional H1 override on the brand × state page
   launchYear: integer('launch_year'),                          // e.g. 2019; "Since 2019" + derives new-launch
   isNewLaunch: boolean('is_new_launch'),                       // manual override; null = derive from launch_year
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.brandId, table.regionId] }),
+  updatedAtIdx: index('brand_regions_updated_at_idx').on(table.updatedAt),
 }));
 
 /* ============================================================
