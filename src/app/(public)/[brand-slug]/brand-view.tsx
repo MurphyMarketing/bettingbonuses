@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Check, X } from 'lucide-react';
 import { db } from '@/db';
-import { brands, companies, offers, authors } from '@/db/schema';
+import { brands, companies, offers, authors, events } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
+import { eventTimeStatus } from '@/lib/event-time';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 const SITE_URL = 'https://www.bettingbonuses.com';
@@ -41,7 +42,7 @@ export function brandMetadata(brand: Brand): Metadata {
 export async function BrandView({ brand }: { brand: Brand }) {
   const authorIds = [brand.primaryAuthorId, brand.secondaryAuthorId].filter((x): x is string => Boolean(x));
 
-  const [activeOffers, successorRows, company, related, authorRows] = await Promise.all([
+  const [activeOffers, successorRows, company, related, authorRows, eventTieRows] = await Promise.all([
     db
       .select({
         id: offers.id,
@@ -77,12 +78,23 @@ export async function BrandView({ brand }: { brand: Brand }) {
           .from(authors)
           .where(inArray(authors.id, authorIds))
       : Promise.resolve([] as { id: string; slug: string; name: string; title: string | null; avatarUrl: string | null; yearsExperience: number | null }[]),
+    // Events tied to this brand's active offers (for the live/upcoming indicator).
+    db
+      .select({ name: events.name, startsAt: events.startsAt, endsAt: events.endsAt })
+      .from(offers)
+      .innerJoin(events, eq(offers.eventId, events.id))
+      .where(and(eq(offers.brandId, brand.id), eq(offers.status, 'active')))
+      .orderBy(asc(events.startsAt)),
   ]);
 
   const successor = successorRows[0];
   const companyName = company[0]?.name;
   const hero = activeOffers[0];
   const rest = activeOffers.slice(1);
+  // Soonest current/upcoming event with a live offer from this brand (indicator).
+  const eventTie = eventTieRows
+    .map((e) => ({ ...e, status: eventTimeStatus(e) }))
+    .find((e) => e.status === 'current' || e.status === 'upcoming') ?? null;
   const intro = brand.introParagraph ?? brand.shortDescription;
   const depositOptions = brand.depositOptions
     ? brand.depositOptions.split(',').map((s) => s.trim()).filter(Boolean)
@@ -130,6 +142,13 @@ export async function BrandView({ brand }: { brand: Brand }) {
     <div className="py-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
+      {/* Live/upcoming event indicator — only when a brand offer is tied to one */}
+      {eventTie ? (
+        <a href="#brand-offers" className="mb-4 block rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm font-medium text-primary hover:underline">
+          {eventTie.status === 'current' ? 'Live now' : 'Upcoming'}: see {brand.name}’s {eventTie.name} offers below →
+        </a>
+      ) : null}
+
       {brand.status === 'rebranded' && successor ? (
         <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
           <strong>{brand.name}</strong> is now <strong>{successor.name}</strong>.{' '}
@@ -151,7 +170,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
 
       {/* Hero — best current offer */}
       {hero ? (
-        <section className="mt-8">
+        <section id="brand-offers" className="mt-8 scroll-mt-20">
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Best current offer</h2>
           <OfferCard offer={offersForCard(hero)} brandSlug={brand.slug} featured />
         </section>

@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, offers } from '@/db/schema';
+import { brands, offers, events, eventSeries } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { LocalDateTime } from '@/components/local-datetime';
 import { formatRelativeTime } from '@/lib/datetime';
+import { eventTimeStatus } from '@/lib/event-time';
 
 export const revalidate = 3600;
 
@@ -32,7 +35,7 @@ const STATES = [
 ];
 
 export default async function HomePage() {
-  const [featuredRows, statsRows] = await Promise.all([
+  const [featuredRows, statsRows, eventRows] = await Promise.all([
     db
       .select({
         id: offers.id,
@@ -58,8 +61,17 @@ export default async function HomePage() {
       })
       .from(offers)
       .where(eq(offers.status, 'active')),
+    // Live + upcoming events (starting within 14 days, not ended > 1 day ago).
+    db
+      .select({ name: events.name, slug: events.slug, startsAt: events.startsAt, endsAt: events.endsAt, seriesSlug: eventSeries.slug })
+      .from(events)
+      .innerJoin(eventSeries, eq(events.seriesId, eventSeries.id))
+      .where(sql`${events.startsAt} <= now() + interval '14 days' and (${events.endsAt} is null or ${events.endsAt} >= now() - interval '1 day')`)
+      .orderBy(asc(events.startsAt))
+      .limit(3),
   ]);
 
+  const liveUpcoming = eventRows.map((e) => ({ ...e, status: eventTimeStatus(e) }));
   const featured = featuredRows[0];
   const recent = statsRows[0]?.recent ?? 0;
   const lastAt = statsRows[0]?.lastAt ? new Date(statsRows[0].lastAt) : null;
@@ -113,6 +125,31 @@ export default async function HomePage() {
           <p>Every offer on BettingBonuses.com is checked by our editorial team and stamped with a verification date.</p>
         )}
       </section>
+
+      {/* Live and upcoming events — renders nothing when there are none */}
+      {liveUpcoming.length > 0 ? (
+        <section className="mt-12">
+          <h2 className="mb-4 text-xl font-semibold">Live and upcoming events</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {liveUpcoming.map((e) => (
+              <Link key={e.slug} href={`/${e.seriesSlug}/${e.slug}/`}>
+                <Card className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold">{e.name}</span>
+                    {e.status === 'current' ? <Badge>Live now</Badge> : <Badge variant="secondary">Upcoming</Badge>}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    <LocalDateTime
+                      iso={e.startsAt.toISOString()}
+                      fallback={e.startsAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    />
+                  </span>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Browse by category */}
       <section className="mt-12">
