@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { bonusKindLabel, userSegmentLabel, offerStatusLabel } from './labels';
+import { OfferTargetPicker, type PickerSeries, type PickerEvent } from './offer-target-picker';
 import type { OfferFormState } from './schema';
 
 export type Option = { value: string; label: string };
@@ -43,8 +44,8 @@ export type OfferFormValues = {
 type OfferFormProps = {
   action: (prev: OfferFormState, formData: FormData) => Promise<OfferFormState>;
   brands: Option[];
-  events: Option[];
-  series: Option[];
+  events: PickerEvent[];
+  series: PickerSeries[];
   sports: Option[];
   regions: Option[];
   selectedRegionIds: string[];
@@ -75,34 +76,6 @@ function Field({
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       {errors?.length ? <p className="text-sm text-destructive">{errors.join(' ')}</p> : null}
     </div>
-  );
-}
-
-function NullableSelect({
-  name,
-  defaultValue,
-  options,
-  placeholder,
-}: {
-  name: string;
-  defaultValue: string;
-  options: Option[];
-  placeholder: string;
-}) {
-  return (
-    <Select name={name} defaultValue={defaultValue || ''}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="">— None —</SelectItem>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }
 
@@ -207,18 +180,16 @@ export function OfferForm({
         <Textarea id="description" name="description" rows={3} defaultValue={values.description} />
       </Field>
 
-      {/* Attachment */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="Event (optional)" errors={errs.eventId} hint="If set, blank valid-to defaults to the event end.">
-          <NullableSelect name="eventId" defaultValue={values.eventId} options={events} placeholder="— None —" />
-        </Field>
-        <Field label="Series (optional)" errors={errs.seriesId}>
-          <NullableSelect name="seriesId" defaultValue={values.seriesId} options={series} placeholder="— None —" />
-        </Field>
-        <Field label="Sport (optional)" errors={errs.sportId}>
-          <NullableSelect name="sportId" defaultValue={values.sportId} options={sports} placeholder="— None —" />
-        </Field>
-      </section>
+      {/* Attachment — nested sport/series/event picker (mutually exclusive) */}
+      <OfferTargetPicker
+        sports={sports}
+        series={series}
+        events={events}
+        defaultSportId={values.sportId}
+        defaultSeriesId={values.seriesId}
+        defaultEventId={values.eventId}
+        errors={errs.eventId ?? errs.seriesId ?? errs.sportId ?? errs._target}
+      />
 
       {/* Money (entered in dollars; stored as integer cents) */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">

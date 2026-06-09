@@ -60,6 +60,12 @@ async function resolveAndCheck(
     errors._form = ['An offer must attach to at least a brand, event, series, or sport'];
   }
 
+  // Mutual exclusivity — mirrors the offers_single_target CHECK so a violation is
+  // a clean form error rather than a 500 at insert time.
+  if ([data.sportId, data.seriesId, data.eventId].filter((v) => v != null).length > 1) {
+    errors._form = ['An offer can target only one of: a sport, an event series, or a specific event'];
+  }
+
   const [brand] = await db.select({ id: brands.id }).from(brands).where(eq(brands.id, data.brandId)).limit(1);
   if (!brand) errors.brandId = ['Selected brand no longer exists'];
 
@@ -82,9 +88,10 @@ async function resolveAndCheck(
     if (!s) errors.sportId = ['Selected sport no longer exists'];
   }
 
-  // Default validTo to the event's end when an event is attached and no
-  // explicit end was given.
-  const validTo = data.validTo ?? (data.eventId != null ? eventEndsAt : null);
+  // Default validTo to the event's end + 1 day when an event is attached and no
+  // explicit end was given (matches the client picker's auto-fill).
+  const validTo =
+    data.validTo ?? (data.eventId != null && eventEndsAt ? new Date(eventEndsAt.getTime() + 24 * 60 * 60 * 1000) : null);
 
   if (data.validFrom && validTo && validTo.getTime() <= data.validFrom.getTime()) {
     errors.validTo = ['Valid-to must be after valid-from'];

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { asc } from 'drizzle-orm';
+import { asc, eq, gte, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands, events, eventSeries, regions, sports } from '@/db/schema';
 import { createOffer } from '../actions';
@@ -21,15 +21,26 @@ const EMPTY: OfferFormValues = {
 export async function loadOptions() {
   const [brandRows, eventRows, seriesRows, sportRows, regionRows] = await Promise.all([
     db.select({ id: brands.id, name: brands.name }).from(brands).orderBy(asc(brands.name)),
-    db.select({ id: events.id, name: events.name }).from(events).orderBy(asc(events.name)),
-    db.select({ id: eventSeries.id, name: eventSeries.name }).from(eventSeries).orderBy(asc(eventSeries.name)),
-    db.select({ id: sports.id, name: sports.name }).from(sports).orderBy(asc(sports.name)),
+    // Events the picker offers: started within the last 30 days or upcoming, soonest first.
+    db
+      .select({ id: events.id, name: events.name, startsAt: events.startsAt, endsAt: events.endsAt })
+      .from(events)
+      .where(gte(events.startsAt, sql`now() - interval '30 days'`))
+      .orderBy(asc(events.startsAt)),
+    // Series carry their sport name so the picker can group by sport.
+    db
+      .select({ id: eventSeries.id, name: eventSeries.name, sportName: sports.name })
+      .from(eventSeries)
+      .leftJoin(sports, eq(eventSeries.sportId, sports.id))
+      .orderBy(asc(sports.displayOrder), asc(eventSeries.name)),
+    db.select({ id: sports.id, name: sports.name }).from(sports).orderBy(asc(sports.displayOrder), asc(sports.name)),
     db.select({ id: regions.id, code: regions.code, name: regions.name }).from(regions).orderBy(asc(regions.name)),
   ]);
+  const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return {
     brands: brandRows.map((b) => ({ value: String(b.id), label: b.name })),
-    events: eventRows.map((e) => ({ value: String(e.id), label: e.name })),
-    series: seriesRows.map((s) => ({ value: String(s.id), label: s.name })),
+    events: eventRows.map((e) => ({ value: String(e.id), label: `${e.name} (${fmtDate(e.startsAt)})`, endsAt: e.endsAt.toISOString() })),
+    series: seriesRows.map((s) => ({ value: String(s.id), label: s.name, group: s.sportName ?? 'Other' })),
     sports: sportRows.map((s) => ({ value: String(s.id), label: s.name })),
     regions: regionRows.map((r) => ({ value: String(r.id), label: `${r.name} (${r.code})` })),
   };
