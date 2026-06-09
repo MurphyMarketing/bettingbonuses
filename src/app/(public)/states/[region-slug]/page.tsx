@@ -5,9 +5,9 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { regions, brandRegions, brands, offers, offerRegions } from '@/db/schema';
 import { Card, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { categoryLabel } from '@/app/admin/brands/labels';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -17,6 +17,29 @@ type Params = Promise<{ 'region-slug': string }>;
 
 // Section order for grouping brands by category.
 const CATEGORY_ORDER = ['sportsbook', 'prediction_market', 'racing', 'dfs'] as const;
+
+// Pluralized section headings for the "Operators live in {state}" listing.
+const CATEGORY_SECTION_LABEL: Record<string, string> = {
+  sportsbook: 'Sportsbooks',
+  prediction_market: 'Prediction Markets',
+  racing: 'Horse Racing',
+  dfs: 'DFS',
+};
+
+/** Year cutoff for "new launch": launched within the last ~18 months. */
+function newLaunchCutoffYear(): number {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 18);
+  return d.getFullYear();
+}
+
+function excerpt(html: string | null, maxWords = 55): string | null {
+  if (!html) return null;
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  const words = text.split(' ');
+  return words.length > maxWords ? `${words.slice(0, maxWords).join(' ')}…` : text;
+}
 
 export async function generateStaticParams() {
   // Only regions that actually have an active brand operating.
@@ -62,6 +85,9 @@ export default async function StatePage({ params }: { params: Params }) {
       category: brands.category,
       logoSquareUrl: brands.logoSquareUrl,
       logoUrl: brands.logoUrl,
+      launchYear: brandRegions.launchYear,
+      isNewLaunch: brandRegions.isNewLaunch,
+      context: brandRegions.context,
     })
     .from(brands)
     .innerJoin(brandRegions, eq(brandRegions.brandId, brands.id))
@@ -102,10 +128,16 @@ export default async function StatePage({ params }: { params: Params }) {
     ? region.bettingLegalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : null;
 
+  const cutoffYear = newLaunchCutoffYear();
+  const withNew = brandRows.map((b) => ({
+    ...b,
+    isNew: b.isNewLaunch ?? (b.launchYear != null && b.launchYear >= cutoffYear),
+  }));
   const byCategory = CATEGORY_ORDER.map((cat) => ({
     category: cat,
-    items: brandRows.filter((b) => b.category === cat),
-  })).filter((g) => g.items.length > 0);
+    featured: withNew.filter((b) => b.category === cat && b.isNew),
+    rest: withNew.filter((b) => b.category === cat && !b.isNew),
+  })).filter((g) => g.featured.length + g.rest.length > 0);
 
   const offerForCard = (o: (typeof offerRows)[number]): PublicOffer => ({
     id: o.id,
@@ -186,24 +218,59 @@ export default async function StatePage({ params }: { params: Params }) {
         <div className="flex flex-col gap-8">
           {byCategory.map((group) => (
             <div key={group.category}>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">{categoryLabel(group.category)}</h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {group.items.map((b) => (
-                  <Card key={b.slug} className="flex flex-row items-center gap-3 p-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
-                      {b.logoSquareUrl || b.logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- static logo
-                        <img src={(b.logoSquareUrl ?? b.logoUrl)!} alt={`${b.name} logo`} className="size-full object-contain" />
-                      ) : (
-                        b.name.charAt(0)
-                      )}
-                    </div>
-                    <CardTitle className="text-base">
-                      <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
-                    </CardTitle>
-                  </Card>
-                ))}
-              </div>
+              <h3 className="mb-3 text-sm font-medium text-muted-foreground">{CATEGORY_SECTION_LABEL[group.category] ?? group.category}</h3>
+
+              {/* Featured new launches */}
+              {group.featured.length ? (
+                <div className="mb-4 flex flex-col gap-4">
+                  {group.featured.map((b) => {
+                    const ex = excerpt(b.context);
+                    return (
+                      <Card key={b.slug} className="flex flex-row items-start gap-3 border-2 border-primary/60 p-4">
+                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
+                          {b.logoSquareUrl || b.logoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- static logo
+                            <img src={(b.logoSquareUrl ?? b.logoUrl)!} alt={`${b.name} logo`} className="size-full object-contain" />
+                          ) : (
+                            b.name.charAt(0)
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <CardTitle className="text-base">
+                              <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
+                            </CardTitle>
+                            <Badge>New launch</Badge>
+                            {b.launchYear ? <span className="text-xs text-muted-foreground">Live since {b.launchYear}</span> : null}
+                          </div>
+                          {ex ? <p className="mt-2 text-sm text-muted-foreground">{ex}</p> : null}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {/* Established operators */}
+              {group.rest.length ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.rest.map((b) => (
+                    <Card key={b.slug} className="flex flex-row items-center gap-3 p-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
+                        {b.logoSquareUrl || b.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- static logo
+                          <img src={(b.logoSquareUrl ?? b.logoUrl)!} alt={`${b.name} logo`} className="size-full object-contain" />
+                        ) : (
+                          b.name.charAt(0)
+                        )}
+                      </div>
+                      <CardTitle className="text-base">
+                        <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
+                      </CardTitle>
+                    </Card>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
