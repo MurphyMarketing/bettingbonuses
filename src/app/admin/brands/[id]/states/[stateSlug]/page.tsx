@@ -35,6 +35,8 @@ export default async function EditBrandStatePage({ params }: { params: Promise<{
     context: row.context ?? '',
     headlineOverride: row.headlineOverride ?? '',
     launchedAt: toDateInput(row.launchedAt),
+    launchYear: row.launchYear != null ? String(row.launchYear) : '',
+    isNewLaunch: row.isNewLaunch == null ? '' : row.isNewLaunch ? 'true' : 'false',
     isActive: row.isActive,
     notes: row.notes ?? '',
   };

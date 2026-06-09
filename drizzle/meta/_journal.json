@@ -1,83 +1,90 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1780932922964,
-      "tag": "0000_clever_psylocke",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1780934422285,
-      "tag": "0001_polite_lethal_legion",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1780935390124,
-      "tag": "0002_public_inhumans",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1780936771073,
-      "tag": "0003_bright_snowbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1780945494359,
-      "tag": "0004_amused_omega_flight",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1780948775179,
-      "tag": "0005_loose_viper",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1780955066576,
-      "tag": "0006_huge_misty_knight",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1780958551210,
-      "tag": "0007_regular_fenris",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1780959552234,
-      "tag": "0008_unusual_groot",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1780961098779,
-      "tag": "0009_whole_sersi",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1780961747809,
-      "tag": "0010_organic_albert_cleary",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1780932922964,
+			"tag": "0000_clever_psylocke",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1780934422285,
+			"tag": "0001_polite_lethal_legion",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1780935390124,
+			"tag": "0002_public_inhumans",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1780936771073,
+			"tag": "0003_bright_snowbird",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1780945494359,
+			"tag": "0004_amused_omega_flight",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1780948775179,
+			"tag": "0005_loose_viper",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1780955066576,
+			"tag": "0006_huge_misty_knight",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1780958551210,
+			"tag": "0007_regular_fenris",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1780959552234,
+			"tag": "0008_unusual_groot",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1780961098779,
+			"tag": "0009_whole_sersi",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1780961747809,
+			"tag": "0010_organic_albert_cleary",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1780975970457,
+			"tag": "0011_brand_region_launch_metadata",
+			"breakpoints": true
+		}
+	]
 }

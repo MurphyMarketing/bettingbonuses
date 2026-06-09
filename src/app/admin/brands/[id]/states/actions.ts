@@ -20,6 +20,10 @@ export async function updateBrandState(
     return typeof v === 'string' ? v.trim() : '';
   };
   const launchedAtRaw = str('launchedAt');
+  const launchYearRaw = str('launchYear');
+  const launchYear = launchYearRaw ? Number(launchYearRaw) : null;
+  const newRaw = str('isNewLaunch'); // '' = auto/null, 'true', 'false'
+  const isNewLaunch = newRaw === 'true' ? true : newRaw === 'false' ? false : null;
 
   try {
     await db
@@ -28,6 +32,8 @@ export async function updateBrandState(
         context: str('context') || null,
         headlineOverride: str('headlineOverride') || null,
         launchedAt: launchedAtRaw ? new Date(launchedAtRaw) : null,
+        launchYear: launchYear != null && Number.isFinite(launchYear) ? launchYear : null,
+        isNewLaunch,
         isActive: formData.get('isActive') != null,
         notes: str('notes') || null,
       })

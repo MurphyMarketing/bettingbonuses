@@ -12,6 +12,8 @@ export type BrandStateValues = {
   context: string;
   headlineOverride: string;
   launchedAt: string;
+  launchYear: string;
+  isNewLaunch: string; // '' = auto, 'true', 'false'
   isActive: boolean;
   notes: string;
 };
@@ -43,16 +45,29 @@ export function BrandStateForm({
         <RichTextEditor name="context" defaultValue={values.context} placeholder="e.g. FanDuel launched in Missouri on Dec 1, 2025 with…" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="launchedAt">Launched in state (date)</Label>
           <Input id="launchedAt" name="launchedAt" type="date" defaultValue={values.launchedAt} />
         </div>
-        <label className="mt-7 flex items-center gap-2 text-sm">
-          <input type="checkbox" name="isActive" defaultChecked={values.isActive} className="size-4" />
-          Active in this state
-        </label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="launchYear">Launch year</Label>
+          <Input id="launchYear" name="launchYear" type="number" inputMode="numeric" placeholder="2024" defaultValue={values.launchYear} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="isNewLaunch">New launch</Label>
+          <select id="isNewLaunch" name="isNewLaunch" defaultValue={values.isNewLaunch} className="h-8 rounded-lg border bg-transparent px-2 text-sm">
+            <option value="">Auto (derive from year)</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="isActive" defaultChecked={values.isActive} className="size-4" />
+        Active in this state
+      </label>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Internal notes</Label>

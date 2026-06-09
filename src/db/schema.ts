@@ -182,6 +182,8 @@ export const brandRegions = pgTable('brand_regions', {
   notes: text('notes'),
   context: text('context'),                                    // per brand × state copy (HTML, sanitized on render)
   headlineOverride: text('headline_override'),                 // optional H1 override on the brand × state page
+  launchYear: integer('launch_year'),                          // e.g. 2019; "Since 2019" + derives new-launch
+  isNewLaunch: boolean('is_new_launch'),                       // manual override; null = derive from launch_year
 }, (table) => ({
   pk: primaryKey({ columns: [table.brandId, table.regionId] }),
 }));

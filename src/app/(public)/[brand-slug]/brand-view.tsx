@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
+import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
 const SITE_URL = 'https://www.bettingbonuses.com';
@@ -227,6 +228,14 @@ export async function BrandView({ brand }: { brand: Brand }) {
           ) : null}
         </section>
       ) : null}
+
+      {/* State availability (renders nothing if the brand operates nowhere) */}
+      <BrandStateAvailability
+        brandId={brand.id}
+        brandSlug={brand.slug}
+        brandName={brand.name}
+        brandHeadlineOffer={brand.introParagraph ?? brand.shortDescription}
+      />
 
       {/* Verdict */}
       {brand.verdict ? (
