@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, brandRegions, offers, offerRegions, regions } from '@/db/schema';
+import { brands, brandRegions, offers, offerRegions, regions, eventSeries, events } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { categoryLabel } from '@/app/admin/brands/labels';
+import { getVisibleEvent, eventMetadata, EventView } from '../event-view';
 
 export const revalidate = 3600; // ISR: 1 hour
 export const dynamicParams = true;
@@ -26,7 +27,18 @@ export async function generateStaticParams() {
     .innerJoin(brands, eq(brandRegions.brandId, brands.id))
     .innerJoin(regions, eq(brandRegions.regionId, regions.id))
     .where(and(inArray(brands.status, ['active', 'rebranded']), eq(brandRegions.isActive, true)));
-  return rows.map((r) => ({ 'brand-slug': r.brandSlug, 'region-slug': r.regionSlug }));
+
+  // Event instances live at this same position (/[series-slug]/[event-slug]).
+  // Currently 0 rows until the event seed — that's expected, not a bug.
+  const eventRows = await db
+    .select({ seriesSlug: eventSeries.slug, eventSlug: events.slug })
+    .from(events)
+    .innerJoin(eventSeries, eq(events.seriesId, eventSeries.id));
+
+  return [
+    ...rows.map((r) => ({ 'brand-slug': r.brandSlug, 'region-slug': r.regionSlug })),
+    ...eventRows.map((r) => ({ 'brand-slug': r.seriesSlug, 'region-slug': r.eventSlug })),
+  ];
 }
 
 /** brand + region + the brand_regions link, or null if any piece is missing
@@ -51,7 +63,11 @@ async function getContext(brandSlug: string, regionSlug: string) {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { 'brand-slug': brandSlug, 'region-slug': regionSlug } = await params;
   const ctx = await getContext(brandSlug, regionSlug);
-  if (!ctx) return { title: 'Not found' };
+  if (!ctx) {
+    const ev = await getVisibleEvent(brandSlug, regionSlug);
+    if (ev) return eventMetadata(ev);
+    return { title: 'Not found' };
+  }
   const { brand, region } = ctx;
   const description = `Current ${brand.name} promo codes and sign-up bonuses for ${region.name} bettors${
     region.regulator ? `, regulated by ${region.regulator}` : ''
@@ -72,7 +88,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function BrandRegionPage({ params }: { params: Params }) {
   const { 'brand-slug': brandSlug, 'region-slug': regionSlug } = await params;
   const ctx = await getContext(brandSlug, regionSlug);
-  if (!ctx) notFound();
+  if (!ctx) {
+    // Fallback: /[series-slug]/[event-slug] event instance page.
+    const ev = await getVisibleEvent(brandSlug, regionSlug);
+    if (ev) return <EventView series={ev.series} event={ev.event} />;
+    notFound();
+  }
   const { brand, region, link } = ctx;
 
   const [regionalOffers, otherRegions, successorRows] = await Promise.all([
