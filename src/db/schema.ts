@@ -207,8 +207,12 @@ export const sports = pgTable('sports', {
 });
 
 /* ============================================================
- * EVENT_SERIES — recurring event templates (the parent / hub)
- * One row per recurring event. The /kentucky-derby/ URL maps here.
+ * EVENT_SERIES — the single recurring-events table (one layer, post-Sprint L).
+ * One row per recurring event; the public concept is "event" but the table keeps
+ * the name `event_series` so offers.series_id and its FKs don't have to change
+ * (see CLAUDE.md: event_series = Events, like regions = States). The starts_at /
+ * ends_at / location hold the NEXT/CURRENT occurrence, rolled forward yearly.
+ * The /kentucky-derby/ URL maps here.
  * ========================================================== */
 export const eventSeries = pgTable('event_series', {
   id: serial('id').primaryKey(),
@@ -218,37 +222,14 @@ export const eventSeries = pgTable('event_series', {
   description: text('description'),                            // for the evergreen hub page
   intro: text('intro'),                                        // hub-page intro (HTML, sanitized)
   typicalMonth: integer('typical_month'),                      // 5 for Derby (May)
+  // Current / next occurrence (rolled forward yearly). Null = evergreen/undated.
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+  location: text('location'),                                  // "Churchill Downs, Louisville, KY"
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
-
-/* ============================================================
- * EVENTS — specific instances. "151st Kentucky Derby (2025)" → eventSeries=Derby.
- * Offers can attach to specific events (the Stanley Cup case) OR to series
- * (evergreen "Stanley Cup promo content" page).
- * ========================================================== */
-export const events = pgTable('events', {
-  id: serial('id').primaryKey(),
-  seriesId: integer('series_id').references(() => eventSeries.id),
-  name: text('name').notNull(),                                // "2026 Stanley Cup Final"
-  slug: varchar('slug', { length: 150 }).unique().notNull(),   // "stanley-cup-final-2026"
-  sportId: integer('sport_id').references(() => sports.id),
-
-  startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
-  endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
-
-  description: text('description'),
-  location: text('location'),                                  // "Levi's Stadium, Santa Clara, CA"
-  isFeatured: boolean('is_featured').notNull().default(false),
-
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  seriesIdx: index('events_series_idx').on(table.seriesId),
-  startsAtIdx: index('events_starts_at_idx').on(table.startsAt),
-  endsAtIdx: index('events_ends_at_idx').on(table.endsAt),
-}));
 
 /* ============================================================
  * OFFERS — the fact table. The whole project lives or dies on this.
@@ -263,10 +244,8 @@ export const offers = pgTable('offers', {
   bonusKind: bonusKindEnum('bonus_kind').notNull(),
   userSegment: userSegmentEnum('user_segment').notNull().default('new'),
 
-  // Event tie — null = evergreen
-  // Either eventId (specific instance) OR seriesId (any instance of a series) OR neither (evergreen).
-  // Sport-themed offers (e.g. "NFL Sunday boost") set sportId only.
-  eventId: integer('event_id').references(() => events.id),
+  // Target tie — null = brand-wide/evergreen. Post-Sprint L there are two axes:
+  // seriesId (a recurring event) OR sportId (a league/sport). At most one is set.
   seriesId: integer('series_id').references(() => eventSeries.id),
   sportId: integer('sport_id').references(() => sports.id),
 
@@ -310,11 +289,10 @@ export const offers = pgTable('offers', {
   brandIdx: index('offers_brand_idx').on(table.brandId),
   statusIdx: index('offers_status_idx').on(table.status),
   validToIdx: index('offers_valid_to_idx').on(table.validTo),
-  eventIdx: index('offers_event_idx').on(table.eventId),
   seriesIdx: index('offers_series_idx').on(table.seriesId),
   sportIdx: index('offers_sport_idx').on(table.sportId),
-  // At most one targeting axis (sport / series / event) may be set.
-  singleTarget: check('offers_single_target', sql`num_nonnulls(${table.sportId}, ${table.seriesId}, ${table.eventId}) <= 1`),
+  // At most one targeting axis (sport / series) may be set.
+  singleTarget: check('offers_single_target', sql`num_nonnulls(${table.sportId}, ${table.seriesId}) <= 1`),
 }));
 
 /* ============================================================
@@ -492,19 +470,11 @@ export const brandRegionsRelations = relations(brandRegions, ({ one }) => ({
 
 export const eventSeriesRelations = relations(eventSeries, ({ one, many }) => ({
   sport: one(sports, { fields: [eventSeries.sportId], references: [sports.id] }),
-  events: many(events),
-  offers: many(offers),
-}));
-
-export const eventsRelations = relations(events, ({ one, many }) => ({
-  series: one(eventSeries, { fields: [events.seriesId], references: [eventSeries.id] }),
-  sport: one(sports, { fields: [events.sportId], references: [sports.id] }),
   offers: many(offers),
 }));
 
 export const offersRelations = relations(offers, ({ one, many }) => ({
   brand: one(brands, { fields: [offers.brandId], references: [brands.id] }),
-  event: one(events, { fields: [offers.eventId], references: [events.id] }),
   series: one(eventSeries, { fields: [offers.seriesId], references: [eventSeries.id] }),
   sport: one(sports, { fields: [offers.sportId], references: [sports.id] }),
   regions: many(offerRegions),

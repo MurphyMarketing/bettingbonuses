@@ -84,10 +84,18 @@ go-ahead). Highlights:
 - `regions` → US states for now, but `country_code` defaults to 'US' so
   non-US expansion later doesn't require migration
 - `brand_regions` → many-to-many: where each brand operates
-- `sports`, `event_series`, `events` → events have two-layer modeling so
-  `/kentucky-derby/` is a stable URL across years
-- `offers` → the fact table; can attach to a specific `event`, a `series`,
-  a `sport`, or be evergreen
+- `sports` → leagues + sports (NFL, NBA, … plus Golf, Tennis, Horse Racing). The
+  unit people search and bet. UI may label this "Leagues & sports."
+- `event_series` = **Events** (display name). Single recurring-events table, one
+  row per recurring event (`/kentucky-derby/`, stable across years), carrying the
+  current/next occurrence (`starts_at` / `ends_at` / `location`). The table keeps
+  the name `event_series` so `offers.series_id` and its FKs don't have to change —
+  an internal-vs-display gap like `regions` = States. (Sprint L collapsed the old
+  two-layer `event_series` + per-instance `events` model into this one layer; the
+  `events` table is gone.)
+- `offers` → the fact table; targets at most one of a `series` (event) or a
+  `sport` (league), or is brand-wide/evergreen — enforced by the
+  `offers_single_target` CHECK (`num_nonnulls(sport_id, series_id) <= 1`).
 - `offer_regions` → opt-in restriction; if empty for an offer, offer applies
   wherever the brand operates
 
