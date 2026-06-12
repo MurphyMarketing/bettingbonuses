@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands, brandRegions, regions } from '@/db/schema';
-import { deriveNewLaunch } from '@/lib/launch';
 import { BrandStatesTable, type BrandStateRow } from './brand-states-table';
 
 export const metadata: Metadata = { title: 'Brand states', robots: { index: false, follow: false } };
@@ -40,7 +39,6 @@ export default async function BrandStatesPage({ params }: { params: Promise<{ id
     context: r.context,
     headlineOverride: r.headlineOverride,
     launchYear: r.launchYear,
-    isNew: deriveNewLaunch(r.launchYear, r.isNewLaunch),
   }));
 
   return (

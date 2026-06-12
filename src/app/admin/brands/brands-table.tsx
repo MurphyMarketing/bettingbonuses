@@ -15,7 +15,6 @@ export type BrandRow = {
   offerCount: number;
   logoUrl: string | null;
   introParagraph: string | null;
-  newLaunchMissingContext: boolean;
 };
 
 const columns: AdminColumn<BrandRow>[] = [
@@ -49,7 +48,6 @@ const statusFilters: AdminStatusFilter<BrandRow>[] = [
   { key: 'inactive', label: 'Inactive', predicate: (b) => b.status !== 'active' },
   { key: 'no-logo', label: 'No logo', predicate: (b) => !b.logoUrl },
   { key: 'no-intro', label: 'No intro', predicate: (b) => !b.introParagraph },
-  { key: 'new-launch-missing-context', label: 'New launch · no context', predicate: (b) => b.newLaunchMissingContext },
 ];
 
 export function BrandsTable({ rows }: { rows: BrandRow[] }) {

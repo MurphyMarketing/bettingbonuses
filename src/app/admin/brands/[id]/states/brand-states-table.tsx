@@ -12,7 +12,6 @@ export type BrandStateRow = {
   context: string | null;
   headlineOverride: string | null;
   launchYear: number | null;
-  isNew: boolean; // derived server-side
 };
 
 const columns: AdminColumn<BrandStateRow>[] = [
@@ -25,18 +24,11 @@ const columns: AdminColumn<BrandStateRow>[] = [
     label: 'Active',
     sortable: true,
     sortAccessor: (r) => r.isActive,
-    cell: (r) => (
-      <span className="flex items-center gap-2">
-        <Badge variant={r.isActive ? 'default' : 'destructive'}>{r.isActive ? 'Active' : 'Inactive'}</Badge>
-        {r.isNew ? <Badge variant="secondary">New</Badge> : null}
-      </span>
-    ),
+    cell: (r) => <Badge variant={r.isActive ? 'default' : 'destructive'}>{r.isActive ? 'Active' : 'Inactive'}</Badge>,
   },
 ];
 
-const statusFilters: AdminStatusFilter<BrandStateRow>[] = [
-  { key: 'new-launch', label: 'New launches', predicate: (r) => r.isNew },
-];
+const statusFilters: AdminStatusFilter<BrandStateRow>[] = [];
 
 export function BrandStatesTable({ rows, brandId }: { rows: BrandStateRow[]; brandId: number }) {
   return (

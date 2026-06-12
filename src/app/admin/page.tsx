@@ -7,7 +7,6 @@ import { brands, offers, articles, authors, brandRegions, regions, redirects, us
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/datetime';
-import { newLaunchCutoffYear } from '@/lib/launch';
 
 export const metadata: Metadata = { title: 'Admin', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -23,8 +22,6 @@ type Activity = { key: string; verb: 'Edited' | 'Created'; what: string; href: s
 
 export default async function AdminDashboard() {
   const session = await auth();
-  const now = new Date();
-  const nlCutoff = newLaunchCutoffYear(now);
 
   const [
     brandAgg, offerAgg, articleAgg, stateAgg, brAgg,
@@ -54,7 +51,6 @@ export default async function AdminDashboard() {
     }).from(regions),
     db.select({
       total: sql<number>`count(*)::int`,
-      newLaunchNoContext: sql<number>`count(*) filter (where (is_new_launch = true or (is_new_launch is null and launch_year >= ${nlCutoff})) and (context is null or context = ''))::int`,
     }).from(brandRegions),
     db.select({ c: sql<number>`count(*)::int` }).from(authors),
     db.select({ c: sql<number>`count(*)::int` }).from(redirects),
@@ -93,7 +89,6 @@ export default async function AdminDashboard() {
     { label: 'Active brands with no logo', count: b.noLogo, href: '/admin/brands?filter=no-logo' },
     { label: 'Active brands with no intro', count: b.noIntro, href: '/admin/brands?filter=no-intro' },
     { label: 'Drafts in progress 14+ days', count: a.staleDraft, href: '/admin/articles?filter=stale-draft' },
-    { label: 'New launches missing context', count: br.newLaunchNoContext, href: '/admin/brands?filter=new-launch-missing-context' },
   ].filter((x) => x.count > 0);
 
   // Recent activity — merge + sort.

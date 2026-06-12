@@ -5,7 +5,6 @@ import { ShieldCheck, RefreshCw, PenLine } from 'lucide-react';
 import { db } from '@/db';
 import { brands, offers, offerRegions, eventSeries, regions, brandRegions } from '@/db/schema';
 import { eventTimeStatus } from '@/lib/event-time';
-import { newLaunchCutoffYear } from '@/lib/launch';
 import { FeaturedOfferCard, type FeaturedHomeOffer } from '@/components/home/featured-offer-card';
 import { EventCard, type HomeEvent } from '@/components/home/event-card';
 import { CategoryTile, type CategoryBrand } from '@/components/home/category-tile';
@@ -30,10 +29,7 @@ const MAX_STATE_CHIPS = 9;
 
 export default async function HomePage() {
   const now = new Date();
-  // "New launch" is the override OR launch_year within ~18 months (same derivation
-  // as the rest of the app; is_new_launch is null in the data, so launch_year drives it).
-  const cutoffYear = newLaunchCutoffYear(now);
-  const [featuredRows, statsRows, eventRows, brandRows, newLaunchRows, establishedRows] = await Promise.all([
+  const [featuredRows, statsRows, eventRows, brandRows, stateRows] = await Promise.all([
     // Featured: best national active offer (national is_featured -> else priority -> amount).
     // National = no offer_regions rows (sql.raw for the correlated offers.id — Sprint H gotcha).
     db
@@ -85,20 +81,11 @@ export default async function HomePage() {
       .from(brands)
       .where(eq(brands.status, 'active'))
       .orderBy(asc(brands.name)),
-    // New-launch / land-rush states: any active brand_region whose launch is
-    // "new" (override true, or launch_year >= cutoff). Missouri/NC/etc. today.
-    db
-      .selectDistinct({ slug: regions.slug, name: regions.name })
-      .from(regions)
-      .innerJoin(brandRegions, and(eq(brandRegions.regionId, regions.id), eq(brandRegions.isActive, true)))
-      .where(sql`(${brandRegions.isNewLaunch} = true or (${brandRegions.isNewLaunch} is null and ${brandRegions.launchYear} >= ${cutoffYear}))`)
-      .orderBy(regions.name),
-    // Established markets by active-brand count, excluding new-launch states.
+    // Best-covered states lead — order by active-brand count, capped.
     db
       .select({ slug: regions.slug, name: regions.name })
       .from(regions)
       .innerJoin(brandRegions, and(eq(brandRegions.regionId, regions.id), eq(brandRegions.isActive, true)))
-      .where(sql`not exists (select 1 from brand_regions br2 where br2.region_id = ${sql.raw('"regions"."id"')} and br2.is_active = true and (br2.is_new_launch = true or (br2.is_new_launch is null and br2.launch_year >= ${cutoffYear})))`)
       .groupBy(regions.id, regions.slug, regions.name)
       .orderBy(desc(sql`count(*)`), asc(regions.name))
       .limit(MAX_STATE_CHIPS),
@@ -144,9 +131,6 @@ export default async function HomePage() {
     const all = byCategory.get(c.category) ?? [];
     return { slug: c.slug, label: c.label, brandCount: all.length, brands: all.slice(0, 4), remaining: Math.max(0, all.length - 4) };
   });
-
-  // State chips — new-launch first (highlighted), then established, capped, + "All states".
-  const established = establishedRows.slice(0, Math.max(0, MAX_STATE_CHIPS - newLaunchRows.length));
 
   return (
     <div className="py-10">
@@ -200,22 +184,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Browse by state — intentional selection, new-launch highlighted */}
+      {/* Browse by state — best-covered states first */}
       <section className="mt-12">
         <h2 className="mb-4 text-xl font-semibold">Browse by state</h2>
         <ul className="flex flex-wrap gap-2">
-          {newLaunchRows.map((s) => (
-            <li key={s.slug}>
-              <Link
-                href={`/states/${s.slug}/`}
-                className="inline-flex items-center gap-1.5 rounded-md border-2 border-primary bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
-              >
-                {s.name}
-                <span className="text-xs font-normal text-primary/80">· new launch</span>
-              </Link>
-            </li>
-          ))}
-          {established.map((s) => (
+          {stateRows.map((s) => (
             <li key={s.slug}>
               <Link href={`/states/${s.slug}/`} className="inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
                 {s.name}

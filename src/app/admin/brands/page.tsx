@@ -22,7 +22,6 @@ export default async function BrandsListPage() {
       introParagraph: brands.introParagraph,
       regionCount: sql<number>`(select count(*)::int from ${brandRegions} where ${brandRegions.brandId} = ${sql.raw('"brands"."id"')})`,
       offerCount: sql<number>`(select count(*)::int from ${offers} where ${offers.brandId} = ${sql.raw('"brands"."id"')})`,
-      newLaunchMissingContext: sql<boolean>`exists (select 1 from ${brandRegions} br where br.brand_id = ${sql.raw('"brands"."id"')} and (br.is_new_launch = true or (br.is_new_launch is null and br.launch_year >= extract(year from (current_date - interval '18 months')))) and (br.context is null or br.context = ''))`,
     })
     .from(brands)
     .leftJoin(companies, eq(brands.companyId, companies.id))

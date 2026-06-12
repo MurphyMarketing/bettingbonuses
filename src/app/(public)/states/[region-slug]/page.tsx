@@ -5,7 +5,6 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { regions, brandRegions, brands, offers, offerRegions } from '@/db/schema';
 import { Card, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -26,21 +25,6 @@ const CATEGORY_SECTION_LABEL: Record<string, string> = {
   racing: 'Horse Racing',
   dfs: 'DFS',
 };
-
-/** Year cutoff for "new launch": launched within the last ~18 months. */
-function newLaunchCutoffYear(): number {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 18);
-  return d.getFullYear();
-}
-
-function excerpt(html: string | null, maxWords = 55): string | null {
-  if (!html) return null;
-  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!text) return null;
-  const words = text.split(' ');
-  return words.length > maxWords ? `${words.slice(0, maxWords).join(' ')}…` : text;
-}
 
 export async function generateStaticParams() {
   // Only regions that actually have an active brand operating.
@@ -86,9 +70,6 @@ export default async function StatePage({ params }: { params: Params }) {
       category: brands.category,
       logoSquareUrl: brands.logoSquareUrl,
       logoUrl: brands.logoUrl,
-      launchYear: brandRegions.launchYear,
-      isNewLaunch: brandRegions.isNewLaunch,
-      context: brandRegions.context,
     })
     .from(brands)
     .innerJoin(brandRegions, eq(brandRegions.brandId, brands.id))
@@ -129,16 +110,10 @@ export default async function StatePage({ params }: { params: Params }) {
     ? region.bettingLegalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : null;
 
-  const cutoffYear = newLaunchCutoffYear();
-  const withNew = brandRows.map((b) => ({
-    ...b,
-    isNew: b.isNewLaunch ?? (b.launchYear != null && b.launchYear >= cutoffYear),
-  }));
   const byCategory = CATEGORY_ORDER.map((cat) => ({
     category: cat,
-    featured: withNew.filter((b) => b.category === cat && b.isNew),
-    rest: withNew.filter((b) => b.category === cat && !b.isNew),
-  })).filter((g) => g.featured.length + g.rest.length > 0);
+    brands: brandRows.filter((b) => b.category === cat),
+  })).filter((g) => g.brands.length > 0);
 
   const offerForCard = (o: (typeof offerRows)[number]): PublicOffer => ({
     id: o.id,
@@ -221,54 +196,17 @@ export default async function StatePage({ params }: { params: Params }) {
             <div key={group.category}>
               <h3 className="mb-3 text-sm font-medium text-muted-foreground">{CATEGORY_SECTION_LABEL[group.category] ?? group.category}</h3>
 
-              {/* Featured new launches */}
-              {group.featured.length ? (
-                <div className="mb-4 flex flex-col gap-4">
-                  {group.featured.map((b) => {
-                    const ex = excerpt(b.context);
-                    return (
-                      <Card key={b.slug} className="flex flex-col gap-3 border-2 border-primary/60 p-4 sm:flex-row sm:items-start">
-                        <BrandLogo
-                          name={b.name}
-                          slug={b.slug}
-                          logoUrl={b.logoUrl}
-                          logoSquareUrl={b.logoSquareUrl}
-                          className="w-full shrink-0 sm:w-[180px]"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <CardTitle className="text-base">
-                              <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
-                            </CardTitle>
-                            <Badge>New launch</Badge>
-                            {b.launchYear ? <span className="text-xs text-muted-foreground">Live since {b.launchYear}</span> : null}
-                          </div>
-                          {ex ? <p className="mt-2 text-sm text-muted-foreground">{ex}</p> : null}
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : null}
-
-              {/* Established operators */}
-              {group.rest.length ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {group.rest.map((b) => (
-                    <Card key={b.slug} className="flex flex-col gap-3 p-3">
-                      <BrandLogo
-                        name={b.name}
-                        slug={b.slug}
-                        logoUrl={b.logoUrl}
-                        logoSquareUrl={b.logoSquareUrl}
-                      />
-                      <CardTitle className="text-base">
-                        <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
-                      </CardTitle>
-                    </Card>
-                  ))}
-                </div>
-              ) : null}
+              {/* All operators in this category, uniform */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {group.brands.map((b) => (
+                  <Card key={b.slug} className="flex flex-col gap-3 p-3">
+                    <BrandLogo name={b.name} slug={b.slug} logoUrl={b.logoUrl} logoSquareUrl={b.logoSquareUrl} />
+                    <CardTitle className="text-base">
+                      <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
+                    </CardTitle>
+                  </Card>
+                ))}
+              </div>
             </div>
           ))}
         </div>

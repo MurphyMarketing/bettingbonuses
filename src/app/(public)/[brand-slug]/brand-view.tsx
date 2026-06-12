@@ -273,7 +273,6 @@ export async function BrandView({ brand }: { brand: Brand }) {
         brandId={brand.id}
         brandSlug={brand.slug}
         brandName={brand.name}
-        brandHeadlineOffer={brand.introParagraph ?? brand.shortDescription}
       />
 
       {/* Verdict */}
