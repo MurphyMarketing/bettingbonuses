@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { ShieldCheck, RefreshCw, PenLine } from 'lucide-react';
 import { db } from '@/db';
-import { brands, offers, offerRegions, eventSeries } from '@/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { OfferCard, type PublicOffer } from '@/components/offer-card';
-import { LocalDateTime } from '@/components/local-datetime';
-import { formatRelativeTime } from '@/lib/datetime';
+import { brands, offers, offerRegions, eventSeries, regions, brandRegions } from '@/db/schema';
 import { eventTimeStatus } from '@/lib/event-time';
+import { newLaunchCutoffYear } from '@/lib/launch';
+import { FeaturedOfferCard, type FeaturedHomeOffer } from '@/components/home/featured-offer-card';
+import { EventCard, type HomeEvent } from '@/components/home/event-card';
+import { CategoryTile, type CategoryBrand } from '@/components/home/category-tile';
 
 export const revalidate = 3600;
 
@@ -18,121 +18,164 @@ export const metadata: Metadata = {
     'Compare today’s best sign-up offers and promo codes from legal US sportsbooks, prediction markets, racebooks, and DFS pick’em apps — every offer carries a last-verified date.',
 };
 
+// Display slug + label + the underlying brands.category enum value.
 const CATEGORIES = [
-  { slug: 'sportsbooks', label: 'Sportsbooks', blurb: 'FanDuel, DraftKings, BetMGM, Caesars & more' },
-  { slug: 'prediction-markets', label: 'Prediction Markets', blurb: 'Kalshi, Polymarket' },
-  { slug: 'horse-racing', label: 'Horse Racing', blurb: 'TwinSpires, FanDuel Racing & more' },
-  { slug: 'dfs', label: 'DFS Pick’em', blurb: 'PrizePicks, Underdog, Sleeper & more' },
+  { slug: 'sportsbooks', label: 'Sportsbooks', category: 'sportsbook' as const },
+  { slug: 'prediction-markets', label: 'Prediction Markets', category: 'prediction_market' as const },
+  { slug: 'horse-racing', label: 'Horse Racing', category: 'racing' as const },
+  { slug: 'dfs', label: 'DFS Pick’em', category: 'dfs' as const },
 ];
 
-const STATES = [
-  { slug: 'missouri', label: 'Missouri' },
-  { slug: 'ohio', label: 'Ohio' },
-  { slug: 'north-carolina', label: 'North Carolina' },
-  { slug: 'kentucky', label: 'Kentucky' },
-  { slug: 'pennsylvania', label: 'Pennsylvania' },
-  { slug: 'new-jersey', label: 'New Jersey' },
-];
+const MAX_STATE_CHIPS = 9;
 
 export default async function HomePage() {
-  const [featuredRows, statsRows, eventRows] = await Promise.all([
+  const now = new Date();
+  // "New launch" is the override OR launch_year within ~18 months (same derivation
+  // as the rest of the app; is_new_launch is null in the data, so launch_year drives it).
+  const cutoffYear = newLaunchCutoffYear(now);
+  const [featuredRows, statsRows, eventRows, brandRows, newLaunchRows, establishedRows] = await Promise.all([
+    // Featured: best national active offer (national is_featured -> else priority -> amount).
+    // National = no offer_regions rows (sql.raw for the correlated offers.id — Sprint H gotcha).
     db
       .select({
-        id: offers.id,
         headline: offers.headline,
         bonusKind: offers.bonusKind,
         code: offers.code,
         bonusAmountCents: offers.bonusAmountCents,
-        termsSummary: offers.termsSummary,
-        responsibleGamblingDisclaimer: offers.responsibleGamblingDisclaimer,
-        validTo: offers.validTo,
         lastVerifiedAt: offers.lastVerifiedAt,
+        brandName: brands.name,
         brandSlug: brands.slug,
+        brandLogoUrl: brands.logoUrl,
+        brandLogoSquareUrl: brands.logoSquareUrl,
+        availableStates: sql<number>`(select count(*)::int from brand_regions br where br.brand_id = ${sql.raw('"brands"."id"')} and br.is_active = true)`,
       })
       .from(offers)
       .innerJoin(brands, eq(offers.brandId, brands.id))
-      // National only — the homepage feature must never surface a region-restricted
-      // offer (same rule as the brand-page hero). National = no offer_regions rows
-      // (sql.raw for the correlated outer offers.id — Sprint H gotcha).
       .where(
         and(
           eq(offers.status, 'active'),
           sql`not exists (select 1 from ${offerRegions} r where r.offer_id = ${sql.raw('"offers"."id"')})`,
         ),
       )
-      // Prefer a national is_featured offer; else best national by priority then amount.
       .orderBy(desc(offers.isFeatured), desc(offers.priority), sql`${offers.bonusAmountCents} desc nulls last`)
       .limit(1),
+    // Trust strip count — operation-wide (unchanged), all active offers verified in 14 days.
     db
-      .select({
-        recent: sql<number>`count(*) filter (where ${offers.lastVerifiedAt} >= now() - interval '14 days')::int`,
-        lastAt: sql<Date | null>`max(${offers.lastVerifiedAt})`,
-      })
+      .select({ recent: sql<number>`count(*) filter (where ${offers.lastVerifiedAt} >= now() - interval '14 days')::int` })
       .from(offers)
       .where(eq(offers.status, 'active')),
-    // Live + upcoming events (event_series): occurrence starts within 14 days and
-    // hasn't ended > 1 day ago. Requires a current-occurrence start date.
+    // Live + upcoming events: occurrence starts within 14 days, not ended > 1 day ago,
+    // with a per-event active-offer count (series_id correlated subquery — Sprint H gotcha).
     db
-      .select({ name: eventSeries.name, slug: eventSeries.slug, startsAt: eventSeries.startsAt, endsAt: eventSeries.endsAt })
+      .select({
+        name: eventSeries.name,
+        slug: eventSeries.slug,
+        startsAt: eventSeries.startsAt,
+        endsAt: eventSeries.endsAt,
+        location: eventSeries.location,
+        offerCount: sql<number>`(select count(*)::int from offers o where o.series_id = ${sql.raw('"event_series"."id"')} and o.status = 'active')`,
+      })
       .from(eventSeries)
       .where(sql`${eventSeries.startsAt} is not null and ${eventSeries.startsAt} <= now() + interval '14 days' and (${eventSeries.endsAt} is null or ${eventSeries.endsAt} >= now() - interval '1 day')`)
       .orderBy(asc(eventSeries.startsAt))
       .limit(3),
+    // Active brands for the category logo tiles (grouped in JS).
+    db
+      .select({ name: brands.name, slug: brands.slug, category: brands.category, logoUrl: brands.logoUrl, logoSquareUrl: brands.logoSquareUrl })
+      .from(brands)
+      .where(eq(brands.status, 'active'))
+      .orderBy(asc(brands.name)),
+    // New-launch / land-rush states: any active brand_region whose launch is
+    // "new" (override true, or launch_year >= cutoff). Missouri/NC/etc. today.
+    db
+      .selectDistinct({ slug: regions.slug, name: regions.name })
+      .from(regions)
+      .innerJoin(brandRegions, and(eq(brandRegions.regionId, regions.id), eq(brandRegions.isActive, true)))
+      .where(sql`(${brandRegions.isNewLaunch} = true or (${brandRegions.isNewLaunch} is null and ${brandRegions.launchYear} >= ${cutoffYear}))`)
+      .orderBy(regions.name),
+    // Established markets by active-brand count, excluding new-launch states.
+    db
+      .select({ slug: regions.slug, name: regions.name })
+      .from(regions)
+      .innerJoin(brandRegions, and(eq(brandRegions.regionId, regions.id), eq(brandRegions.isActive, true)))
+      .where(sql`not exists (select 1 from brand_regions br2 where br2.region_id = ${sql.raw('"regions"."id"')} and br2.is_active = true and (br2.is_new_launch = true or (br2.is_new_launch is null and br2.launch_year >= ${cutoffYear})))`)
+      .groupBy(regions.id, regions.slug, regions.name)
+      .orderBy(desc(sql`count(*)`), asc(regions.name))
+      .limit(MAX_STATE_CHIPS),
   ]);
 
-  const liveUpcoming = eventRows.map((e) => ({ ...e, status: eventTimeStatus(e) }));
-  const featured = featuredRows[0];
   const recent = statsRows[0]?.recent ?? 0;
-  const lastAt = statsRows[0]?.lastAt ? new Date(statsRows[0].lastAt) : null;
 
-  const featuredOffer: PublicOffer | null = featured
+  // Featured offer card data.
+  const f = featuredRows[0];
+  const featured: FeaturedHomeOffer | null = f
     ? {
-        id: featured.id,
-        headline: featured.headline,
-        bonusKind: featured.bonusKind,
-        code: featured.code,
-        bonusAmountCents: featured.bonusAmountCents,
-        termsSummary: featured.termsSummary,
-        responsibleGamblingDisclaimer: featured.responsibleGamblingDisclaimer,
-        validTo: featured.validTo,
-        lastVerifiedAt: featured.lastVerifiedAt,
+        headline: f.headline,
+        bonusKind: f.bonusKind,
+        code: f.code,
+        bonusAmountCents: f.bonusAmountCents,
+        lastVerifiedAt: f.lastVerifiedAt,
+        brandName: f.brandName,
+        brandSlug: f.brandSlug,
+        brandLogoUrl: f.brandLogoUrl,
+        brandLogoSquareUrl: f.brandLogoSquareUrl,
+        availableStates: f.availableStates,
       }
     : null;
+
+  // Events.
+  const liveUpcoming: HomeEvent[] = eventRows.map((e) => ({
+    name: e.name,
+    slug: e.slug,
+    startsAt: e.startsAt,
+    location: e.location,
+    status: eventTimeStatus(e, now),
+    offerCount: e.offerCount,
+  }));
+
+  // Category tiles — group active brands by category.
+  const byCategory = new Map<string, CategoryBrand[]>();
+  for (const b of brandRows) {
+    const arr = byCategory.get(b.category) ?? [];
+    arr.push({ name: b.name, slug: b.slug, logoUrl: b.logoUrl, logoSquareUrl: b.logoSquareUrl });
+    byCategory.set(b.category, arr);
+  }
+  const categoryTiles = CATEGORIES.map((c) => {
+    const all = byCategory.get(c.category) ?? [];
+    return { slug: c.slug, label: c.label, brandCount: all.length, brands: all.slice(0, 4), remaining: Math.max(0, all.length - 4) };
+  });
+
+  // State chips — new-launch first (highlighted), then established, capped, + "All states".
+  const established = establishedRows.slice(0, Math.max(0, MAX_STATE_CHIPS - newLaunchRows.length));
 
   return (
     <div className="py-10">
       {/* Hero */}
       <section>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Find today’s best US betting offers
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Find today’s best US betting offers</h1>
         <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
-          Verified sign-up promotions and promo codes from legal US sportsbooks, prediction markets,
-          racebooks, and DFS pick’em apps.
+          Verified sign-up promotions and promo codes from legal US sportsbooks, prediction markets, racebooks, and DFS pick’em apps.
         </p>
 
+        {/* Trust strip */}
+        <div className="mt-4 inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-secondary px-3.5 py-2 text-sm text-secondary-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="size-4 text-primary" />
+            {recent > 0 ? <><span className="font-semibold">{recent}</span> verified in 14 days</> : 'Verified offers'}
+          </span>
+          <span className="inline-flex items-center gap-1.5"><RefreshCw className="size-4 text-primary" />Checked daily</span>
+          <span className="inline-flex items-center gap-1.5"><PenLine className="size-4 text-primary" />Editorial review</span>
+        </div>
+
+        {/* Featured offer */}
         <div className="mt-8 max-w-xl">
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Featured offer of the week</h2>
-          {featuredOffer && featured ? (
-            <OfferCard offer={featuredOffer} brandSlug={featured.brandSlug} featured />
+          {featured ? (
+            <FeaturedOfferCard offer={featured} />
           ) : (
             <p className="text-muted-foreground">Featured offers are on the way — check back soon.</p>
           )}
         </div>
-      </section>
-
-      {/* E-E-A-T trust block */}
-      <section className="mt-10 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-        {recent > 0 ? (
-          <p>
-            <span className="font-semibold text-foreground">{recent}</span> offer{recent === 1 ? '' : 's'}{' '}
-            verified in the last 14 days
-            {lastAt ? <> · last checked {formatRelativeTime(lastAt)}</> : null} · reviewed by our
-            editorial team.
-          </p>
-        ) : (
-          <p>Every offer on BettingBonuses.com is checked by our editorial team and stamped with a verification date.</p>
-        )}
       </section>
 
       {/* Live and upcoming events — renders nothing when there are none */}
@@ -141,60 +184,49 @@ export default async function HomePage() {
           <h2 className="mb-4 text-xl font-semibold">Live and upcoming events</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {liveUpcoming.map((e) => (
-              <Link key={e.slug} href={`/${e.slug}/`}>
-                <Card className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">{e.name}</span>
-                    {e.status === 'current' ? <Badge>Live now</Badge> : <Badge variant="secondary">Upcoming</Badge>}
-                  </div>
-                  {e.startsAt ? (
-                    <span className="text-sm text-muted-foreground">
-                      <LocalDateTime
-                        iso={e.startsAt.toISOString()}
-                        fallback={e.startsAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      />
-                    </span>
-                  ) : null}
-                </Card>
-              </Link>
+              <EventCard key={e.slug} event={e} now={now} />
             ))}
           </div>
         </section>
       ) : null}
 
-      {/* Browse by category */}
+      {/* Browse by category — logo tiles */}
       <section className="mt-12">
         <h2 className="mb-4 text-xl font-semibold">Browse by category</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CATEGORIES.map((c) => (
-            <Card key={c.slug}>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  <Link href={`/${c.slug}/`} className="hover:underline">
-                    {c.label}
-                  </Link>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">{c.blurb}</CardContent>
-            </Card>
+          {categoryTiles.map((c) => (
+            <CategoryTile key={c.slug} slug={c.slug} label={c.label} brandCount={c.brandCount} brands={c.brands} remaining={c.remaining} />
           ))}
         </div>
       </section>
 
-      {/* Browse by state */}
+      {/* Browse by state — intentional selection, new-launch highlighted */}
       <section className="mt-12">
         <h2 className="mb-4 text-xl font-semibold">Browse by state</h2>
         <ul className="flex flex-wrap gap-2">
-          {STATES.map((s) => (
+          {newLaunchRows.map((s) => (
             <li key={s.slug}>
               <Link
-                href={`/states/${s.slug}`}
-                className="inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                href={`/states/${s.slug}/`}
+                className="inline-flex items-center gap-1.5 rounded-md border-2 border-primary bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
               >
-                {s.label}
+                {s.name}
+                <span className="text-xs font-normal text-primary/80">· new launch</span>
               </Link>
             </li>
           ))}
+          {established.map((s) => (
+            <li key={s.slug}>
+              <Link href={`/states/${s.slug}/`} className="inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
+                {s.name}
+              </Link>
+            </li>
+          ))}
+          <li>
+            <Link href="/states/" className="inline-block rounded-md border border-dashed px-3 py-1.5 text-sm font-medium hover:bg-muted">
+              All states →
+            </Link>
+          </li>
         </ul>
       </section>
     </div>
