@@ -21,7 +21,7 @@ export default async function SportsIndexPage() {
       slug: sports.slug,
       category: sports.category,
       offerCount: sql<number>`(select count(*)::int from offers where offers.sport_id = ${sql.raw('"sports"."id"')} and offers.status = 'active')`,
-      upcomingCount: sql<number>`(select count(*)::int from events where events.sport_id = ${sql.raw('"sports"."id"')} and events.ends_at >= now())`,
+      upcomingCount: sql<number>`(select count(*)::int from event_series where event_series.sport_id = ${sql.raw('"sports"."id"')} and event_series.ends_at >= now())`,
     })
     .from(sports)
     .orderBy(asc(sports.displayOrder), asc(sports.name));

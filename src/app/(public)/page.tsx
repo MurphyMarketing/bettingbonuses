@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, offers, offerRegions, events, eventSeries } from '@/db/schema';
+import { brands, offers, offerRegions, eventSeries } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
@@ -70,13 +70,13 @@ export default async function HomePage() {
       })
       .from(offers)
       .where(eq(offers.status, 'active')),
-    // Live + upcoming events (starting within 14 days, not ended > 1 day ago).
+    // Live + upcoming events (event_series): occurrence starts within 14 days and
+    // hasn't ended > 1 day ago. Requires a current-occurrence start date.
     db
-      .select({ name: events.name, slug: events.slug, startsAt: events.startsAt, endsAt: events.endsAt, seriesSlug: eventSeries.slug })
-      .from(events)
-      .innerJoin(eventSeries, eq(events.seriesId, eventSeries.id))
-      .where(sql`${events.startsAt} <= now() + interval '14 days' and (${events.endsAt} is null or ${events.endsAt} >= now() - interval '1 day')`)
-      .orderBy(asc(events.startsAt))
+      .select({ name: eventSeries.name, slug: eventSeries.slug, startsAt: eventSeries.startsAt, endsAt: eventSeries.endsAt })
+      .from(eventSeries)
+      .where(sql`${eventSeries.startsAt} is not null and ${eventSeries.startsAt} <= now() + interval '14 days' and (${eventSeries.endsAt} is null or ${eventSeries.endsAt} >= now() - interval '1 day')`)
+      .orderBy(asc(eventSeries.startsAt))
       .limit(3),
   ]);
 
@@ -141,18 +141,20 @@ export default async function HomePage() {
           <h2 className="mb-4 text-xl font-semibold">Live and upcoming events</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {liveUpcoming.map((e) => (
-              <Link key={e.slug} href={`/${e.seriesSlug}/${e.slug}/`}>
+              <Link key={e.slug} href={`/${e.slug}/`}>
                 <Card className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold">{e.name}</span>
                     {e.status === 'current' ? <Badge>Live now</Badge> : <Badge variant="secondary">Upcoming</Badge>}
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    <LocalDateTime
-                      iso={e.startsAt.toISOString()}
-                      fallback={e.startsAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    />
-                  </span>
+                  {e.startsAt ? (
+                    <span className="text-sm text-muted-foreground">
+                      <LocalDateTime
+                        iso={e.startsAt.toISOString()}
+                        fallback={e.startsAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      />
+                    </span>
+                  ) : null}
                 </Card>
               </Link>
             ))}

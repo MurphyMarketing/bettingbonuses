@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { asc, eq, inArray, or } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { eventSeries, events, offers } from '@/db/schema';
+import { eventSeries, offers, sports } from '@/db/schema';
 import { OfferCard } from '@/components/offer-card';
 import { LocalDateTime } from '@/components/local-datetime';
 import { Badge } from '@/components/ui/badge';
@@ -24,42 +24,89 @@ export function seriesMetadata(series: Series): Metadata {
   return { title, description, alternates: { canonical: `/${series.slug}/` }, openGraph: { title, description, url: `/${series.slug}/`, type: 'website' } };
 }
 
-function shortDate(d: Date) {
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+/** Status badge for the current occurrence. Null when the event has no dates. */
+function statusBadge(series: Series, now: Date): { label: string; variant: 'default' | 'secondary' | 'outline' } | null {
+  const status = eventTimeStatus({ startsAt: series.startsAt, endsAt: series.endsAt }, now);
+  if (status === 'evergreen') return null;
+  if (status === 'current') return { label: 'Live now', variant: 'default' };
+  if (status === 'upcoming') {
+    const d = daysUntil(series.startsAt!, now);
+    return { label: d <= 0 ? 'Starting soon' : `Upcoming in ${d} day${d === 1 ? '' : 's'}`, variant: 'secondary' };
+  }
+  const ago = -daysUntil(series.endsAt ?? series.startsAt!, now);
+  return { label: ago <= 0 ? 'Recently concluded' : `Concluded ${ago} day${ago === 1 ? '' : 's'} ago`, variant: 'outline' };
 }
 
+/**
+ * The single evergreen event page at /[series-slug]/ (e.g. /super-bowl/). Reads
+ * the event's own current-occurrence date/location from event_series, shows the
+ * countdown/live/concluded status, surfaces offers tied to the event OR its
+ * league/sport, and links back to the league hub. Carries the SportsEvent JSON-LD.
+ */
 export async function SeriesView({ series }: { series: Series }) {
-  const [eventRows, offerCards] = await Promise.all([
-    db
-      .select({ id: events.id, name: events.name, slug: events.slug, startsAt: events.startsAt, endsAt: events.endsAt, location: events.location })
-      .from(events)
-      .where(eq(events.seriesId, series.id))
-      .orderBy(asc(events.startsAt)),
-    activeOfferCards(
-      or(eq(offers.seriesId, series.id), inArray(offers.eventId, db.select({ id: events.id }).from(events).where(eq(events.seriesId, series.id)))),
-    ),
+  const offerWhere =
+    series.sportId != null
+      ? or(eq(offers.seriesId, series.id), eq(offers.sportId, series.sportId))
+      : eq(offers.seriesId, series.id);
+
+  const [offerCards, sportRows] = await Promise.all([
+    activeOfferCards(offerWhere),
+    series.sportId != null
+      ? db.select({ name: sports.name, slug: sports.slug, fullName: sports.fullName }).from(sports).where(eq(sports.id, series.sportId)).limit(1)
+      : Promise.resolve([] as { name: string; slug: string; fullName: string | null }[]),
   ]);
+  const sport = sportRows[0] ?? null;
 
   const now = new Date();
-  const withStatus = eventRows.map((e) => ({ ...e, status: eventTimeStatus(e, now) }));
-  const current = withStatus.find((e) => e.status === 'current');
-  const upcoming = withStatus.filter((e) => e.status === 'upcoming');
-  const featured = current ?? upcoming[0] ?? null;
-  const others = withStatus.filter((e) => e !== featured);
+  const badge = statusBadge(series, now);
 
+  const [placeName, ...rest] = (series.location ?? '').split(',');
+  const sportsEventLd = series.startsAt
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SportsEvent',
+        name: series.name,
+        startDate: series.startsAt.toISOString(),
+        ...(series.endsAt ? { endDate: series.endsAt.toISOString() } : {}),
+        ...(series.location
+          ? { location: { '@type': 'Place', name: placeName.trim(), ...(rest.length ? { address: rest.join(',').trim() } : {}) } }
+          : {}),
+        ...(sport ? { organizer: { '@type': 'Organization', name: sport.fullName ?? sport.name } } : {}),
+      }
+    : null;
   const itemListLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: `${series.name} betting offers`,
     itemListElement: offerCards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/${c.brandSlug}/`, name: c.offer.headline })),
   };
-  const jsonLd = JSON.stringify(itemListLd).replace(/</g, '\\u003c');
+  const jsonLd = JSON.stringify([sportsEventLd, itemListLd].filter(Boolean)).replace(/</g, '\\u003c');
 
   return (
     <div className="py-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
-      <h1 className="text-3xl font-bold tracking-tight">{series.name} betting promo codes</h1>
+      {sport ? (
+        <p className="text-sm text-muted-foreground">
+          <Link href={`/sports/${sport.slug}/`} className="hover:underline">{sport.name}</Link> / {series.name}
+        </p>
+      ) : null}
+
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">{series.name} betting promo codes</h1>
+        {badge ? <Badge variant={badge.variant}>{badge.label}</Badge> : null}
+      </div>
+
+      {/* Current occurrence date + location */}
+      {series.startsAt ? (
+        <p className="mt-3 text-muted-foreground">
+          <LocalDateTime
+            iso={series.startsAt.toISOString()}
+            fallback={series.startsAt.toLocaleDateString('en-US', { dateStyle: 'long' } as Intl.DateTimeFormatOptions)}
+          />
+          {series.location ? ` · ${series.location}` : ''}
+        </p>
+      ) : null}
 
       {series.intro ? (
         <div
@@ -70,44 +117,12 @@ export async function SeriesView({ series }: { series: Series }) {
         <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">{series.description}</p>
       ) : null}
 
-      {/* Featured event */}
-      {featured ? (
-        <section className="mt-8">
-          <div className="rounded-lg border-2 border-primary/60 p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <Link href={`/${series.slug}/${featured.slug}/`} className="text-xl font-semibold hover:underline">{featured.name}</Link>
-              {featured.status === 'current' ? (
-                <Badge>Live now</Badge>
-              ) : (
-                <Badge variant="secondary">{(() => { const d = daysUntil(featured.startsAt, now); return d <= 0 ? 'Starting soon' : `In ${d} day${d === 1 ? '' : 's'}`; })()}</Badge>
-              )}
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              <LocalDateTime iso={featured.startsAt.toISOString()} fallback={shortDate(featured.startsAt)} />
-              {featured.location ? ` · ${featured.location}` : ''}
-            </p>
-            <Link href={`/${series.slug}/${featured.slug}/`} className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
-              View {featured.name} offers →
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Other instances */}
-      {others.length ? (
-        <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">All {series.name} events</h2>
-          <ul className="flex flex-col gap-1.5">
-            {others.map((e) => (
-              <li key={e.slug}>
-                <Link href={`/${series.slug}/${e.slug}/`} className="text-sm hover:underline">
-                  <span className="font-medium text-primary">{e.name}</span>
-                  <span className="text-muted-foreground"> — {shortDate(e.startsAt)} ({e.status})</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {sport ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Part of{' '}
+          <Link href={`/sports/${sport.slug}/`} className="font-medium text-primary hover:underline">{sport.name}</Link>
+          {' '}— see all {sport.name} promos.
+        </p>
       ) : null}
 
       {/* Offers */}

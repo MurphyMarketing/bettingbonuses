@@ -5,7 +5,7 @@ import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Check, X } from 'lucide-react';
 import { db } from '@/db';
-import { brands, companies, offers, offerRegions, authors, events } from '@/db/schema';
+import { brands, companies, offers, offerRegions, authors, eventSeries } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
@@ -83,13 +83,14 @@ export async function BrandView({ brand }: { brand: Brand }) {
           .from(authors)
           .where(inArray(authors.id, authorIds))
       : Promise.resolve([] as { id: string; slug: string; name: string; title: string | null; avatarUrl: string | null; yearsExperience: number | null }[]),
-    // Events tied to this brand's active offers (for the live/upcoming indicator).
+    // Events (event_series) tied to this brand's active offers, for the
+    // live/upcoming indicator. Uses each event's current-occurrence dates.
     db
-      .select({ name: events.name, startsAt: events.startsAt, endsAt: events.endsAt })
+      .select({ name: eventSeries.name, startsAt: eventSeries.startsAt, endsAt: eventSeries.endsAt })
       .from(offers)
-      .innerJoin(events, eq(offers.eventId, events.id))
+      .innerJoin(eventSeries, eq(offers.seriesId, eventSeries.id))
       .where(and(eq(offers.brandId, brand.id), eq(offers.status, 'active')))
-      .orderBy(asc(events.startsAt)),
+      .orderBy(asc(eventSeries.startsAt)),
   ]);
 
   const successor = successorRows[0];

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, asc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { sports, eventSeries, events, offers } from '@/db/schema';
+import { sports, eventSeries, offers } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { OfferCard } from '@/components/offer-card';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -21,7 +21,7 @@ export async function generateStaticParams() {
     .select({
       slug: sports.slug,
       offerCount: sql<number>`(select count(*)::int from offers where offers.sport_id = ${sql.raw('"sports"."id"')} and offers.status = 'active')`,
-      upcomingCount: sql<number>`(select count(*)::int from events where events.sport_id = ${sql.raw('"sports"."id"')} and events.ends_at >= now())`,
+      upcomingCount: sql<number>`(select count(*)::int from event_series where event_series.sport_id = ${sql.raw('"sports"."id"')} and event_series.ends_at >= now())`,
     })
     .from(sports);
   return rows.filter((r) => r.offerCount > 0 || r.upcomingCount > 0).map((r) => ({ 'sport-slug': r.slug }));
@@ -47,20 +47,19 @@ export default async function SportHubPage({ params }: { params: Params }) {
   if (!sport) notFound();
 
   const seriesIdSubq = db.select({ id: eventSeries.id }).from(eventSeries).where(eq(eventSeries.sportId, sport.id));
-  const eventIdSubq = db.select({ id: events.id }).from(events).where(eq(events.sportId, sport.id));
 
   const [upcomingEvents, seriesRows, offerCards] = await Promise.all([
+    // Events (event_series) in this league with a current/upcoming occurrence.
     db
-      .select({ name: events.name, slug: events.slug, startsAt: events.startsAt, seriesSlug: eventSeries.slug })
-      .from(events)
-      .innerJoin(eventSeries, eq(events.seriesId, eventSeries.id))
-      .where(and(eq(events.sportId, sport.id), gte(events.endsAt, sql`now()`)))
-      .orderBy(asc(events.startsAt))
+      .select({ name: eventSeries.name, slug: eventSeries.slug, startsAt: eventSeries.startsAt })
+      .from(eventSeries)
+      .where(and(eq(eventSeries.sportId, sport.id), gte(eventSeries.endsAt, sql`now()`)))
+      .orderBy(asc(eventSeries.startsAt))
       .limit(5),
     db.select({ name: eventSeries.name, slug: eventSeries.slug }).from(eventSeries).where(eq(eventSeries.sportId, sport.id)).orderBy(asc(eventSeries.name)),
-    // Offers tied to this sport, a series in it, or an event in it. (Brand-wide
-    // offers are intentionally excluded — see design note in the report.)
-    activeOfferCards(or(eq(offers.sportId, sport.id), inArray(offers.seriesId, seriesIdSubq), inArray(offers.eventId, eventIdSubq))),
+    // Offers tied to this league/sport or an event in it. (Brand-wide offers are
+    // intentionally excluded — see design note in the report.)
+    activeOfferCards(or(eq(offers.sportId, sport.id), inArray(offers.seriesId, seriesIdSubq))),
   ]);
 
   const itemListLd = {
@@ -90,10 +89,10 @@ export default async function SportHubPage({ params }: { params: Params }) {
           <h2 className="mb-3 text-lg font-semibold">Upcoming {sport.name} events</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((e) => (
-              <Link key={e.slug} href={`/${e.seriesSlug}/${e.slug}/`}>
+              <Link key={e.slug} href={`/${e.slug}/`}>
                 <Card className="p-3 transition-colors hover:bg-muted/50">
                   <span className="block font-medium">{e.name}</span>
-                  <span className="block text-xs text-muted-foreground">{shortDate(e.startsAt)}</span>
+                  {e.startsAt ? <span className="block text-xs text-muted-foreground">{shortDate(e.startsAt)}</span> : null}
                 </Card>
               </Link>
             ))}
@@ -103,7 +102,7 @@ export default async function SportHubPage({ params }: { params: Params }) {
 
       {seriesRows.length ? (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">{sport.name} event series</h2>
+          <h2 className="mb-3 text-lg font-semibold">All {sport.name} events</h2>
           <ul className="flex flex-wrap gap-2">
             {seriesRows.map((s) => (
               <li key={s.slug}>
