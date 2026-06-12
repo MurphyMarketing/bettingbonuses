@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands } from '@/db/schema';
@@ -8,17 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 
-export const revalidate = 3600;
-export const dynamicParams = false; // only the four known category slugs
-
 /**
- * Category hub at /[category]/promo-codes. NOTE: this lives under the
- * [brand-slug] dynamic segment (Next.js forbids two differently-named dynamic
- * segments at the same position). "promo-codes" is a static child, so it takes
- * precedence over [brand-slug]/[region-slug] for /<x>/promo-codes. The param
- * here holds a CATEGORY slug, not a brand slug.
+ * Category hub, rendered at the bare /[category]/ root (e.g. /sportsbooks/).
+ * Resolved as the final step of the root [brand-slug] slug fallback chain
+ * (brand -> article -> event-series -> category -> 404). The legacy
+ * /[category]/promo-codes/ URL 301-redirects here via the redirects table, so
+ * this is the single canonical page per category.
  */
-const CATEGORIES: Record<
+export const CATEGORIES: Record<
   string,
   { category: 'sportsbook' | 'prediction_market' | 'racing' | 'dfs'; h1: string; noun: string }
 > = {
@@ -28,29 +24,27 @@ const CATEGORIES: Record<
   dfs: { category: 'dfs', h1: "Best DFS Pick'em Promo Codes", noun: 'DFS pick’em' },
 };
 
-type Params = Promise<{ 'brand-slug': string }>;
-
-export function generateStaticParams() {
-  return Object.keys(CATEGORIES).map((slug) => ({ 'brand-slug': slug }));
+/** True if the slug is one of the four category hubs. */
+export function isCategorySlug(slug: string): boolean {
+  return Object.prototype.hasOwnProperty.call(CATEGORIES, slug);
 }
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { 'brand-slug': categorySlug } = await params;
+/** Metadata for a category hub, or null if the slug isn't a category. */
+export function categoryHubMetadata(categorySlug: string): Metadata | null {
   const cfg = CATEGORIES[categorySlug];
-  if (!cfg) return { title: 'Not found' };
+  if (!cfg) return null;
   const description = `Compare the best ${cfg.noun} promo codes and sign-up bonuses from legal US operators. Verified offers, updated regularly.`;
   return {
     title: cfg.h1,
     description,
-    alternates: { canonical: `/${categorySlug}/promo-codes/` },
-    openGraph: { title: cfg.h1, description, url: `/${categorySlug}/promo-codes/`, type: 'website' },
+    alternates: { canonical: `/${categorySlug}/` },
+    openGraph: { title: cfg.h1, description, url: `/${categorySlug}/`, type: 'website' },
   };
 }
 
-export default async function CategoryHubPage({ params }: { params: Params }) {
-  const { 'brand-slug': categorySlug } = await params;
+export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
   const cfg = CATEGORIES[categorySlug];
-  if (!cfg) notFound();
+  if (!cfg) return null; // caller guards with isCategorySlug; defensive only
 
   const categoryBrands = await db
     .select({

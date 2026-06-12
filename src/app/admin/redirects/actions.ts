@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { redirects } from '@/db/schema';
 import { invalidateRedirectsCache } from '@/lib/redirects-cache';
+import { normalizeRedirectFromPath } from '@/lib/redirect-path';
 import { redirectSchema, redirectFormToRaw, toFieldErrors, type RedirectFormState, type RedirectInput } from './schema';
 
 function toColumns(data: RedirectInput) {
@@ -76,8 +77,10 @@ export async function bulkImportRedirects(_prev: BulkImportState, formData: Form
       skipped++;
       continue;
     }
+    // Normalize to the slash-less form the proxy receives so cutover rows fire.
+    const fromPath = normalizeRedirectFromPath(from);
     try {
-      const res = await db.insert(redirects).values({ fromPath: from, toPath: to }).onConflictDoNothing().returning({ id: redirects.id });
+      const res = await db.insert(redirects).values({ fromPath, toPath: to }).onConflictDoNothing().returning({ id: redirects.id });
       if (res.length) imported++;
       else skipped++; // already existed
     } catch {

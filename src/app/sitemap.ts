@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   for (const c of CATEGORY_SLUGS) {
-    entries.push({ url: `${SITE_URL}/${c}/promo-codes/`, changeFrequency: 'daily', priority: 0.8 });
+    entries.push({ url: `${SITE_URL}/${c}/`, changeFrequency: 'daily', priority: 0.8 });
   }
   for (const b of brandRows) {
     entries.push({ url: `${SITE_URL}/${b.slug}/`, lastModified: b.updatedAt, changeFrequency: 'daily', priority: 0.9 });

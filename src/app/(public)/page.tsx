@@ -159,7 +159,7 @@ export default async function HomePage() {
             <Card key={c.slug}>
               <CardHeader>
                 <CardTitle className="text-base">
-                  <Link href={`/${c.slug}/promo-codes`} className="hover:underline">
+                  <Link href={`/${c.slug}/`} className="hover:underline">
                     {c.label}
                   </Link>
                 </CardTitle>

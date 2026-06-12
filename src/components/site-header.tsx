@@ -6,10 +6,10 @@ import { Menu, X } from 'lucide-react';
 import { SiteSearch, MobileSearch } from '@/components/search/site-search';
 
 const NAV = [
-  { label: 'Sportsbooks', href: '/sportsbooks/promo-codes' },
-  { label: 'Prediction Markets', href: '/prediction-markets/promo-codes' },
-  { label: 'Racing', href: '/horse-racing/promo-codes' },
-  { label: 'DFS', href: '/dfs/promo-codes' },
+  { label: 'Sportsbooks', href: '/sportsbooks' },
+  { label: 'Prediction Markets', href: '/prediction-markets' },
+  { label: 'Racing', href: '/horse-racing' },
+  { label: 'DFS', href: '/dfs' },
   { label: 'States', href: '/states' },
 ];
 

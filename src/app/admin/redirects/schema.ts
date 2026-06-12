@@ -1,11 +1,14 @@
 import { z } from 'zod';
+import { normalizeRedirectFromPath } from '@/lib/redirect-path';
 
 export const redirectSchema = z.object({
   fromPath: z
     .string()
     .trim()
     .min(1, 'From path is required')
-    .refine((v) => v.startsWith('/'), 'From path must start with /'),
+    .refine((v) => v.startsWith('/'), 'From path must start with /')
+    // Store the slash-less form the proxy actually receives (see redirect-path.ts).
+    .transform(normalizeRedirectFromPath),
   toPath: z
     .string()
     .trim()
