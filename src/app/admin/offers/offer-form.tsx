@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { bonusKindLabel, userSegmentLabel, offerStatusLabel } from './labels';
-import { OfferTargetPicker, type PickerSeries, type PickerEvent } from './offer-target-picker';
+import { OfferTargetPicker, type PickerSeries } from './offer-target-picker';
 import type { OfferFormState } from './schema';
 
 export type Option = { value: string; label: string };
@@ -16,7 +16,6 @@ export type OfferFormValues = {
   brandId: string;
   bonusKind: string;
   userSegment: string;
-  eventId: string;
   seriesId: string;
   sportId: string;
   code: string;
@@ -44,7 +43,6 @@ export type OfferFormValues = {
 type OfferFormProps = {
   action: (prev: OfferFormState, formData: FormData) => Promise<OfferFormState>;
   brands: Option[];
-  events: PickerEvent[];
   series: PickerSeries[];
   sports: Option[];
   regions: Option[];
@@ -85,7 +83,6 @@ function Field({
 export function OfferForm({
   action,
   brands,
-  events,
   series,
   sports,
   regions,
@@ -189,15 +186,13 @@ export function OfferForm({
         <Textarea id="description" name="description" rows={3} defaultValue={values.description} />
       </Field>
 
-      {/* Attachment — nested sport/series/event picker (mutually exclusive) */}
+      {/* Attachment — brand-wide / league-sport / event picker (mutually exclusive) */}
       <OfferTargetPicker
         sports={sports}
         series={series}
-        events={events}
         defaultSportId={values.sportId}
         defaultSeriesId={values.seriesId}
-        defaultEventId={values.eventId}
-        errors={errs.eventId ?? errs.seriesId ?? errs.sportId ?? errs._target}
+        errors={errs.seriesId ?? errs.sportId ?? errs._target}
       />
 
       {/* Money (entered in dollars; stored as integer cents) */}

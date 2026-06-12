@@ -27,7 +27,7 @@ const columns: AdminColumn<SportRow>[] = [
   },
   { key: 'category', label: 'Category', sortable: true, sortAccessor: (s) => s.category, cell: (s) => s.category ?? <span className="text-muted-foreground">—</span> },
   { key: 'order', label: 'Order', sortable: true, sortAccessor: (s) => s.displayOrder, cell: (s) => s.displayOrder, className: 'text-right tabular-nums' },
-  { key: 'series', label: 'Series', sortable: true, sortAccessor: (s) => s.seriesCount, cell: (s) => s.seriesCount, className: 'text-right tabular-nums' },
+  { key: 'series', label: 'Events', sortable: true, sortAccessor: (s) => s.seriesCount, cell: (s) => s.seriesCount, className: 'text-right tabular-nums' },
   { key: 'offers', label: 'Active offers', sortable: true, sortAccessor: (s) => s.offerCount, cell: (s) => s.offerCount, className: 'text-right tabular-nums' },
 ];
 

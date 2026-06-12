@@ -4,7 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { offers, brands, sports, eventSeries, events } from '@/db/schema';
+import { offers, brands, sports, eventSeries } from '@/db/schema';
 import { BONUS_KIND_VALUES } from '../schema';
 
 export type BulkState = { error?: string };
@@ -21,22 +21,19 @@ export async function bulkCreateOffers(_prev: BulkState, fd: FormData): Promise<
   const validToRaw = String(fd.get('validTo') ?? '').trim();
   const brandIds = fd.getAll('brandIds').map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0);
 
-  if (!['event', 'series', 'sport'].includes(targetType)) return { error: 'Choose what to tie the offers to.' };
+  if (!['series', 'sport'].includes(targetType)) return { error: 'Choose what to tie the offers to.' };
   if (!Number.isInteger(targetId) || targetId <= 0) return { error: 'Select a target.' };
   if (!brandIds.length) return { error: 'Select at least one brand.' };
   if (!template) return { error: 'Enter a headline template.' };
   if (!(BONUS_KIND_VALUES as readonly string[]).includes(bonusKind)) return { error: 'Choose a bonus type.' };
 
-  // Validate the target exists; capture event end for the valid-to default.
+  // Validate the target exists; capture the event's occurrence end for valid-to.
   let eventEndsAt: Date | null = null;
   if (targetType === 'sport') {
     const [r] = await db.select({ id: sports.id }).from(sports).where(eq(sports.id, targetId)).limit(1);
-    if (!r) return { error: 'That sport no longer exists.' };
-  } else if (targetType === 'series') {
-    const [r] = await db.select({ id: eventSeries.id }).from(eventSeries).where(eq(eventSeries.id, targetId)).limit(1);
-    if (!r) return { error: 'That series no longer exists.' };
+    if (!r) return { error: 'That league/sport no longer exists.' };
   } else {
-    const [r] = await db.select({ id: events.id, endsAt: events.endsAt }).from(events).where(eq(events.id, targetId)).limit(1);
+    const [r] = await db.select({ id: eventSeries.id, endsAt: eventSeries.endsAt }).from(eventSeries).where(eq(eventSeries.id, targetId)).limit(1);
     if (!r) return { error: 'That event no longer exists.' };
     eventEndsAt = r.endsAt;
   }
@@ -44,7 +41,7 @@ export async function bulkCreateOffers(_prev: BulkState, fd: FormData): Promise<
   const validFrom = validFromRaw ? new Date(validFromRaw) : new Date();
   const validTo = validToRaw
     ? new Date(validToRaw)
-    : targetType === 'event' && eventEndsAt
+    : targetType === 'series' && eventEndsAt
       ? new Date(eventEndsAt.getTime() + DAY)
       : new Date(Date.now() + 30 * DAY);
 
@@ -52,7 +49,7 @@ export async function bulkCreateOffers(_prev: BulkState, fd: FormData): Promise<
   const nameById = new Map(brandRows.map((b) => [b.id, b.name]));
 
   // Exactly one target FK — satisfies offers_single_target by construction.
-  const fk = targetType === 'sport' ? { sportId: targetId } : targetType === 'series' ? { seriesId: targetId } : { eventId: targetId };
+  const fk = targetType === 'sport' ? { sportId: targetId } : { seriesId: targetId };
 
   const rows = brandIds
     .filter((id) => nameById.has(id))

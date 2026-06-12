@@ -6,7 +6,7 @@ import { sports, eventSeries, offers } from '@/db/schema';
 import { Button } from '@/components/ui/button';
 import { SportsTable } from './sports-table';
 
-export const metadata: Metadata = { title: 'Sports', robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Leagues & sports', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function SportsListPage() {
@@ -27,10 +27,10 @@ export default async function SportsListPage() {
     <main className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Sports</h1>
-          <p className="text-sm text-muted-foreground">{rows.length} total</p>
+          <h1 className="text-2xl font-semibold">Leagues &amp; sports</h1>
+          <p className="text-sm text-muted-foreground">{rows.length} total · the units people search and bet</p>
         </div>
-        <Button render={<Link href="/admin/sports/new">New sport</Link>} />
+        <Button render={<Link href="/admin/sports/new">New league / sport</Link>} />
       </div>
 
       <SportsTable rows={rows} />

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { auth, signOut } from '@/auth';
 import { db } from '@/db';
 import { brands, offers, articles, authors, brandRegions, regions, redirects, users } from '@/db/schema';
@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 const NAV = [
   ['Brands', '/admin/brands'], ['Offers', '/admin/offers'], ['Articles', '/admin/articles'],
   ['Authors', '/admin/authors'], ['States', '/admin/states'],
-  ['Sports', '/admin/sports'], ['Event series', '/admin/event-series'], ['Events', '/admin/events'],
+  ['Leagues & sports', '/admin/sports'], ['Events', '/admin/events'],
   ['Affiliate links', '/admin/affiliate-links'], ['Redirects', '/admin/redirects'], ['Content status', '/admin/content-status'],
 ] as const;
 

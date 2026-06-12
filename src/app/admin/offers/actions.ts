@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { brands, events, eventSeries, offers, offerRegions, sports } from '@/db/schema';
+import { brands, eventSeries, offers, offerRegions, sports } from '@/db/schema';
 import {
   offerSchema,
   offerFormToRaw,
@@ -20,7 +20,6 @@ function toColumns(data: OfferInput, validTo: Date | null) {
     brandId: data.brandId,
     bonusKind: data.bonusKind,
     userSegment: data.userSegment,
-    eventId: data.eventId ?? null,
     seriesId: data.seriesId ?? null,
     sportId: data.sportId ?? null,
     code: data.code ?? null,
@@ -47,51 +46,45 @@ function toColumns(data: OfferInput, validTo: Date | null) {
 }
 
 /** Validate FK references and apply the cross-field rules:
- *  - at least one of brand/event/series/sport (brand is required, so always ok)
- *  - if eventId set and validTo blank, default validTo to the event's endsAt
+ *  - if a series (event) is selected and validTo is blank, default validTo to the
+ *    event's current-occurrence ends_at + 1 day
  *  - validTo (when set) must be after validFrom
+ *  - at most one target: a sport OR a series (mirrors offers_single_target)
  *  Returns the resolved validTo, or field errors. */
 async function resolveAndCheck(
   data: OfferInput,
 ): Promise<{ validTo: Date | null } | { errors: Record<string, string[]> }> {
   const errors: Record<string, string[]> = {};
 
-  if (data.brandId == null && data.eventId == null && data.seriesId == null && data.sportId == null) {
-    errors._form = ['An offer must attach to at least a brand, event, series, or sport'];
-  }
-
-  // Mutual exclusivity — mirrors the offers_single_target CHECK so a violation is
-  // a clean form error rather than a 500 at insert time.
-  if ([data.sportId, data.seriesId, data.eventId].filter((v) => v != null).length > 1) {
-    errors._form = ['An offer can target only one of: a sport, an event series, or a specific event'];
+  // Mutual exclusivity — mirrors the offers_single_target CHECK (≤1 of sport, series)
+  // so a violation is a clean form error rather than a 500 at insert time.
+  if ([data.sportId, data.seriesId].filter((v) => v != null).length > 1) {
+    errors._form = ['An offer can target only one of: a league/sport or an event'];
   }
 
   const [brand] = await db.select({ id: brands.id }).from(brands).where(eq(brands.id, data.brandId)).limit(1);
   if (!brand) errors.brandId = ['Selected brand no longer exists'];
 
-  let eventEndsAt: Date | null = null;
-  if (data.eventId != null) {
-    const [ev] = await db
-      .select({ id: events.id, endsAt: events.endsAt })
-      .from(events)
-      .where(eq(events.id, data.eventId))
-      .limit(1);
-    if (!ev) errors.eventId = ['Selected event no longer exists'];
-    else eventEndsAt = ev.endsAt;
-  }
+  // A selected event (series) supplies the auto-valid-to from its occurrence end.
+  let seriesEndsAt: Date | null = null;
   if (data.seriesId != null) {
-    const [s] = await db.select({ id: eventSeries.id }).from(eventSeries).where(eq(eventSeries.id, data.seriesId)).limit(1);
-    if (!s) errors.seriesId = ['Selected series no longer exists'];
+    const [s] = await db
+      .select({ id: eventSeries.id, endsAt: eventSeries.endsAt })
+      .from(eventSeries)
+      .where(eq(eventSeries.id, data.seriesId))
+      .limit(1);
+    if (!s) errors.seriesId = ['Selected event no longer exists'];
+    else seriesEndsAt = s.endsAt;
   }
   if (data.sportId != null) {
     const [s] = await db.select({ id: sports.id }).from(sports).where(eq(sports.id, data.sportId)).limit(1);
-    if (!s) errors.sportId = ['Selected sport no longer exists'];
+    if (!s) errors.sportId = ['Selected league/sport no longer exists'];
   }
 
-  // Default validTo to the event's end + 1 day when an event is attached and no
-  // explicit end was given (matches the client picker's auto-fill).
+  // Default validTo to the event's occurrence end + 1 day when an event is
+  // attached and no explicit end was given (matches the client picker's auto-fill).
   const validTo =
-    data.validTo ?? (data.eventId != null && eventEndsAt ? new Date(eventEndsAt.getTime() + 24 * 60 * 60 * 1000) : null);
+    data.validTo ?? (data.seriesId != null && seriesEndsAt ? new Date(seriesEndsAt.getTime() + 24 * 60 * 60 * 1000) : null);
 
   if (data.validFrom && validTo && validTo.getTime() <= data.validFrom.getTime()) {
     errors.validTo = ['Valid-to must be after valid-from'];

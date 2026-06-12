@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { events, eventSeries } from '@/db/schema';
+import { eventSeries, sports } from '@/db/schema';
 import { Button } from '@/components/ui/button';
 import { toDatetimeLocalInput } from '@/lib/datetime';
 import { updateEvent, deleteEvent } from '../../actions';
@@ -16,18 +16,19 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   const { id: idParam } = await params;
   const id = Number(idParam);
   if (!Number.isInteger(id) || id <= 0) notFound();
-  const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+  const [event] = await db.select().from(eventSeries).where(eq(eventSeries.id, id)).limit(1);
   if (!event) notFound();
-  const series = await db.select({ id: eventSeries.id, name: eventSeries.name }).from(eventSeries).orderBy(asc(eventSeries.name));
+  const sportOptions = await db.select({ id: sports.id, name: sports.name }).from(sports).orderBy(asc(sports.displayOrder), asc(sports.name));
 
   const values: EventFormValues = {
     name: event.name,
     slug: event.slug,
-    seriesId: event.seriesId != null ? String(event.seriesId) : '',
+    sportId: event.sportId != null ? String(event.sportId) : '',
     startsAt: toDatetimeLocalInput(event.startsAt),
     endsAt: toDatetimeLocalInput(event.endsAt),
-    description: event.description ?? '',
     location: event.location ?? '',
+    intro: event.intro ?? '',
+    description: event.description ?? '',
   };
 
   return (
@@ -38,7 +39,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         <p className="text-sm text-muted-foreground">/{event.slug}</p>
       </div>
 
-      <EventForm action={updateEvent.bind(null, event.id)} values={values} series={series} submitLabel="Save changes" />
+      <EventForm action={updateEvent.bind(null, event.id)} values={values} sports={sportOptions} submitLabel="Save changes" />
 
       <div className="mt-10 border-t pt-6">
         <h2 className="text-sm font-medium">Danger zone</h2>

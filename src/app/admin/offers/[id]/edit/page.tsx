@@ -36,7 +36,6 @@ export default async function EditOfferPage({ params }: { params: Promise<{ id: 
     brandId: String(offer.brandId),
     bonusKind: offer.bonusKind,
     userSegment: offer.userSegment,
-    eventId: offer.eventId != null ? String(offer.eventId) : '',
     seriesId: offer.seriesId != null ? String(offer.seriesId) : '',
     sportId: offer.sportId != null ? String(offer.sportId) : '',
     code: offer.code ?? '',
@@ -92,7 +91,6 @@ export default async function EditOfferPage({ params }: { params: Promise<{ id: 
       <OfferForm
         action={updateOffer.bind(null, id)}
         brands={options.brands}
-        events={options.events}
         series={options.series}
         sports={options.sports}
         regions={options.regions}

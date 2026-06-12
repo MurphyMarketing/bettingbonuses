@@ -10,21 +10,19 @@ import type { BulkState } from './actions';
 type Opt = { value: string; label: string };
 type SeriesOpt = { value: string; label: string; group: string };
 type BrandOpt = { id: number; name: string; category: string };
-type TargetType = 'event' | 'series' | 'sport';
+type TargetType = 'series' | 'sport';
 
 const SELECT_CLASS = 'h-9 w-full rounded-lg border bg-transparent px-2 text-sm';
 
 export function BulkCreateForm({
   sports,
   series,
-  events,
   brands,
   bonusKinds,
   action,
 }: {
   sports: Opt[];
   series: SeriesOpt[];
-  events: Opt[];
   brands: BrandOpt[];
   bonusKinds: readonly string[];
   action: (prev: BulkState, fd: FormData) => Promise<BulkState>;
@@ -68,10 +66,10 @@ export function BulkCreateForm({
       <section className="rounded-lg border p-4">
         <p className="mb-3 text-sm font-medium">Tied to:</p>
         <div className="flex flex-wrap gap-4">
-          {(['event', 'series', 'sport'] as TargetType[]).map((t) => (
+          {(['series', 'sport'] as TargetType[]).map((t) => (
             <label key={t} className="flex items-center gap-2 text-sm">
               <input type="radio" name="targetType" value={t} checked={targetType === t} onChange={() => onType(t)} className="size-4" />
-              {t === 'event' ? 'Event' : t === 'series' ? 'Event series' : 'Sport'}
+              {t === 'series' ? 'Event' : 'League / sport'}
             </label>
           ))}
         </div>
@@ -79,23 +77,17 @@ export function BulkCreateForm({
         <div className="mt-3">
           {targetType === 'sport' ? (
             <select name="targetId" value={targetId} onChange={(e) => setTargetId(e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select a sport…</option>
+              <option value="">Select a league or sport…</option>
               {sports.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-          ) : targetType === 'series' ? (
+          ) : (
             <select name="targetId" value={targetId} onChange={(e) => setTargetId(e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select a series…</option>
+              <option value="">Select an event…</option>
               {[...seriesGroups.entries()].map(([g, items]) => (
                 <optgroup key={g} label={g}>
                   {items.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </optgroup>
               ))}
-            </select>
-          ) : (
-            <select name="targetId" value={targetId} onChange={(e) => setTargetId(e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select an event…</option>
-              {events.length === 0 ? <option value="" disabled>No events yet — add events first</option> : null}
-              {events.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
             </select>
           )}
         </div>

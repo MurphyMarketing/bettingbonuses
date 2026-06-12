@@ -2,27 +2,23 @@
 
 import { Badge } from '@/components/ui/badge';
 import { AdminTable, type AdminColumn, type AdminStatusFilter } from '@/components/admin/AdminTable';
-import type { EventTimeStatus } from '@/lib/event-time';
-
-const STATUS_VARIANT: Record<EventTimeStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  current: 'default',
-  upcoming: 'secondary',
-  past: 'outline',
-  evergreen: 'outline',
-};
-const STATUS_LABEL: Record<EventTimeStatus, string> = { current: 'Live', upcoming: 'Upcoming', past: 'Past', evergreen: 'Evergreen' };
+import { EVENT_STATUS_LABEL, type EventTimeStatus } from '@/lib/event-time';
 
 export type EventRow = {
   id: number;
   name: string;
   slug: string;
-  seriesName: string | null;
-  startsAt: Date;
-  endsAt: Date;
-  startsLabel: string;
-  endsLabel: string;
+  sportName: string | null;
   status: EventTimeStatus;
+  whenLabel: string;
   offerCount: number;
+};
+
+const STATUS_VARIANT: Record<EventTimeStatus, 'default' | 'secondary' | 'outline'> = {
+  current: 'default',
+  upcoming: 'secondary',
+  past: 'outline',
+  evergreen: 'outline',
 };
 
 const columns: AdminColumn<EventRow>[] = [
@@ -38,17 +34,22 @@ const columns: AdminColumn<EventRow>[] = [
       </>
     ),
   },
-  { key: 'series', label: 'Series', sortable: true, sortAccessor: (e) => e.seriesName, cell: (e) => e.seriesName ?? <span className="text-muted-foreground">—</span> },
-  { key: 'starts', label: 'Starts', sortable: true, sortAccessor: (e) => e.startsAt, cell: (e) => <span className="text-sm text-muted-foreground">{e.startsLabel}</span> },
-  { key: 'ends', label: 'Ends', sortable: true, sortAccessor: (e) => e.endsAt, cell: (e) => <span className="text-sm text-muted-foreground">{e.endsLabel}</span> },
-  { key: 'status', label: 'Status', cell: (e) => <Badge variant={STATUS_VARIANT[e.status]}>{STATUS_LABEL[e.status]}</Badge> },
-  { key: 'offers', label: 'Offers', sortable: true, sortAccessor: (e) => e.offerCount, cell: (e) => e.offerCount, className: 'text-right tabular-nums' },
+  { key: 'sport', label: 'League / sport', sortable: true, sortAccessor: (e) => e.sportName, cell: (e) => e.sportName ?? <span className="text-muted-foreground">—</span> },
+  {
+    key: 'when',
+    label: 'Current occurrence',
+    cell: (e) => (
+      <span className="flex items-center gap-2">
+        <Badge variant={STATUS_VARIANT[e.status]}>{EVENT_STATUS_LABEL[e.status]}</Badge>
+        <span className="text-sm text-muted-foreground">{e.whenLabel}</span>
+      </span>
+    ),
+  },
+  { key: 'offers', label: 'Active offers', sortable: true, sortAccessor: (e) => e.offerCount, cell: (e) => e.offerCount, className: 'text-right tabular-nums' },
 ];
 
 const statusFilters: AdminStatusFilter<EventRow>[] = [
-  { key: 'upcoming', label: 'Upcoming', predicate: (e) => e.status === 'upcoming' },
-  { key: 'current', label: 'Current', predicate: (e) => e.status === 'current' },
-  { key: 'past', label: 'Past', predicate: (e) => e.status === 'past' },
+  { key: 'live-upcoming', label: 'Live or upcoming', predicate: (e) => e.status === 'current' || e.status === 'upcoming' },
 ];
 
 export function EventsTable({ rows }: { rows: EventRow[] }) {
@@ -59,7 +60,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
       searchFields={['name', 'slug']}
       statusFilters={statusFilters}
       rowHref={(e) => `/admin/events/${e.id}/edit`}
-      defaultSort={{ key: 'starts', direction: 'desc' }}
+      defaultSort={{ key: 'name', direction: 'asc' }}
       searchPlaceholder="Search events…"
       emptyState="No events match."
     />
