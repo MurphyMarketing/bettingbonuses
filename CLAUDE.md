@@ -110,7 +110,8 @@ preserve link equity:
 
 - All old URLs need 301 redirects to their new equivalents
 - `/racing/tvg/` → `/fanduel-racing/` (TVG was rebranded to FanDuel Racing in 2024)
-- `/sports/` → `/sportsbooks/promo-codes/`
+- `/sports/` → `/sportsbooks/` (the consolidated category root; do NOT point at
+  `/sportsbooks/promo-codes/`, which now itself 301s to `/sportsbooks/`)
 - Per-operator topical pages → corresponding brand pages
 - Redirects stored as DB rows, not in `next.config.js`, so they survive deploys
   and are editable
