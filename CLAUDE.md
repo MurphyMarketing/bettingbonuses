@@ -48,7 +48,12 @@ are the product.
 - **Tailwind CSS + shadcn/ui** — UI primitives for admin and public
 - **Vercel** for application hosting initially (deploy on push to `main`); future migration to Sevalla planned
 - **No edge runtime** — stay on Next.js standard Node runtime so the codebase runs on any Node host. No Vercel edge runtime, no edge middleware, no Vercel KV, no Vercel Postgres, no Vercel Cron. If we need scheduled jobs, GitHub Actions.
-- **No Supabase Storage** — static files (logos, etc.) live in `/public/` in the repo.
+- **Supabase Storage for uploaded media** — brand logos, article images, and
+  author avatars live in Supabase Storage buckets (`brand-logos`,
+  `article-images`, `author-avatars`), public-read / admin-write. Migrated here
+  in Sprint D: Vercel's filesystem is ephemeral, so writes to `/public/` don't
+  persist across deploys. Build-time/static assets committed to the repo still
+  live in `/public/`; runtime-uploaded media does not.
 - **No Supabase Row-Level Security policies** — auth at the app layer via Auth.js + Next.js middleware.
 
 ## Critical conventions
@@ -109,6 +114,10 @@ preserve link equity:
 - Per-operator topical pages → corresponding brand pages
 - Redirects stored as DB rows, not in `next.config.js`, so they survive deploys
   and are editable
+- Brand-logo, article-image, and author-avatar URLs are stored in the DB as
+  absolute `https://...supabase.co/storage/...` URLs, so a future move off
+  Supabase (e.g. to Sevalla) requires either keeping Supabase Storage as an
+  external dependency or running a URL-rewrite migration over those columns.
 
 ## E-E-A-T requirements
 
