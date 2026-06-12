@@ -96,7 +96,8 @@ go-ahead). Highlights:
 - `/` → homepage with featured offers
 - `/[brand-slug]/` → brand page (e.g. `/fanduel-sportsbook/`)
 - `/[brand-slug]/[region-slug]/` → brand × state (e.g. `/fanduel-sportsbook/missouri/`)
-- `/[category]/promo-codes/` → category aggregation (e.g. `/sportsbooks/promo-codes/`)
+- `/[category]/` → category aggregation (e.g. `/sportsbooks/`); the legacy
+  `/[category]/promo-codes/` URL 301s here
 - `/[event-series-slug]/` → event hub (e.g. `/kentucky-derby/`)
 - `/[event-series-slug]/[event-slug]/` → specific event instance
 - `/states/[region-slug]/` → state landing page (which brands are legal here)
