@@ -105,7 +105,11 @@ export async function BrandView({ brand }: { brand: Brand }) {
     .filter((o) => o.isNational)
     .sort((a, b) => b.priority - a.priority || (b.bonusAmountCents ?? 0) - (a.bonusAmountCents ?? 0))[0];
   const hero = featuredNational ?? bestNational ?? null;
-  const rest = activeOffers.filter((o) => o.id !== hero?.id);
+  // "More offers" lists the brand's OTHER nationally-available bonus types only,
+  // never state-specific offers — those are surfaced through the by-state section
+  // and per-state pages. (hero is always national, so excluding it is enough to
+  // drop it; the isNational filter drops region-restricted offers.)
+  const rest = activeOffers.filter((o) => o.isNational && o.id !== hero?.id);
   // Soonest current/upcoming event with a live offer from this brand (indicator).
   const eventTie = eventTieRows
     .map((e) => ({ ...e, status: eventTimeStatus(e) }))

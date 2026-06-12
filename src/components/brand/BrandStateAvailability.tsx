@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { ChevronRight } from 'lucide-react';
 import { db } from '@/db';
-import { brandRegions, regions, offers, brands, companies } from '@/db/schema';
+import { brandRegions, regions, offers, offerRegions, brands, companies } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { formatUsdCents } from '@/lib/money';
 
@@ -36,9 +36,10 @@ export async function BrandStateAvailability({
 }) {
   const cutoffYear = newLaunchCutoffYear();
 
-  const [liveRows, notAvailRows, topOfferRows, companyRows] = await Promise.all([
+  const [liveRows, notAvailRows, companyRows, nationalHeadlineRows, stateOfferRows] = await Promise.all([
     db
       .select({
+        id: regions.id,
         name: regions.name,
         slug: regions.slug,
         regulator: regions.regulator,
@@ -59,23 +60,59 @@ export async function BrandStateAvailability({
       .leftJoin(brandRegions, and(eq(brandRegions.regionId, regions.id), eq(brandRegions.brandId, brandId)))
       .where(isNull(brandRegions.brandId))
       .orderBy(regions.name),
+    db.select({ name: companies.name }).from(brands).leftJoin(companies, eq(brands.companyId, companies.id)).where(eq(brands.id, brandId)).limit(1),
+    // The national headline offer — the default amount/code/min-deposit each
+    // state runs unless it has its own state-specific offer. National = no
+    // offer_regions rows (sql.raw for the correlated outer offers.id — Sprint H gotcha).
     db
       .select({ bonusAmountCents: offers.bonusAmountCents, code: offers.code, qualifyingDepositCents: offers.qualifyingDepositCents })
       .from(offers)
-      .where(and(eq(offers.brandId, brandId), eq(offers.status, 'active')))
-      .orderBy(desc(offers.priority))
+      .where(
+        and(
+          eq(offers.brandId, brandId),
+          eq(offers.status, 'active'),
+          sql`not exists (select 1 from ${offerRegions} r where r.offer_id = ${sql.raw('"offers"."id"')})`,
+        ),
+      )
+      .orderBy(desc(offers.priority), sql`${offers.bonusAmountCents} desc nulls last`)
       .limit(1),
-    db.select({ name: companies.name }).from(brands).leftJoin(companies, eq(brands.companyId, companies.id)).where(eq(brands.id, brandId)).limit(1),
+    // State-specific offers (amount/code/min-deposit) keyed by region, highest priority first.
+    db
+      .select({
+        regionId: offerRegions.regionId,
+        bonusAmountCents: offers.bonusAmountCents,
+        code: offers.code,
+        qualifyingDepositCents: offers.qualifyingDepositCents,
+      })
+      .from(offers)
+      .innerJoin(offerRegions, eq(offerRegions.offerId, offers.id))
+      .where(and(eq(offers.brandId, brandId), eq(offers.status, 'active')))
+      .orderBy(desc(offers.priority), sql`${offers.bonusAmountCents} desc nulls last`),
   ]);
 
   // Race-condition guard: nothing to show if the brand operates nowhere.
   if (liveRows.length === 0) return null;
 
-  const topOffer = topOfferRows[0];
-  const bonus = topOffer?.bonusAmountCents != null ? formatUsdCents(topOffer.bonusAmountCents) : null;
-  const code = topOffer?.code ?? null;
-  const minDeposit = topOffer?.qualifyingDepositCents != null ? formatUsdCents(topOffer.qualifyingDepositCents) : null;
   const providerName = companyRows[0]?.name ?? brandName;
+
+  // Per-state offer details: the state's own offer if it has one, else the
+  // national headline offer — amount, code, and min-deposit resolved together so
+  // a state never shows another state's code (e.g. Missouri's code on an Ohio
+  // card). Ordered by priority, so the first row per region wins.
+  type OfferVals = { bonusAmountCents: number | null; code: string | null; qualifyingDepositCents: number | null };
+  const national: OfferVals | null = nationalHeadlineRows[0] ?? null;
+  const stateByRegion = new Map<number, OfferVals>();
+  for (const r of stateOfferRows) {
+    if (!stateByRegion.has(r.regionId)) stateByRegion.set(r.regionId, r);
+  }
+  const offerForRegion = (regionId: number) => {
+    const o = stateByRegion.get(regionId) ?? national;
+    return {
+      bonus: o?.bonusAmountCents != null ? formatUsdCents(o.bonusAmountCents) : null,
+      code: o?.code ?? null,
+      minDeposit: o?.qualifyingDepositCents != null ? formatUsdCents(o.qualifyingDepositCents) : null,
+    };
+  };
 
   const rows = liveRows.map((r) => ({ ...r, isNew: r.isNewLaunch ?? (r.launchYear != null && r.launchYear >= cutoffYear) }));
   const featured = rows.filter((r) => r.isNew); // already alphabetical from the query
@@ -107,6 +144,7 @@ export async function BrandStateAvailability({
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {featured.map((r) => {
             const ex = excerpt(r.context);
+            const off = offerForRegion(r.id);
             return (
               <div key={r.slug} className="rounded-lg border-2 border-primary/60 p-4">
                 <div className="flex items-center justify-between gap-2">
@@ -119,8 +157,8 @@ export async function BrandStateAvailability({
                 {ex ? <p className="mt-2 text-sm text-muted-foreground">{ex}</p> : null}
                 <p className="mt-2 text-sm font-medium">{r.headlineOverride || brandHeadlineOffer}</p>
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span>Promo code: <span className="font-medium text-foreground">{code ?? '—'}</span></span>
-                  <span>Min deposit: <span className="font-medium text-foreground">{minDeposit ?? '—'}</span></span>
+                  <span>Promo code: <span className="font-medium text-foreground">{off.code ?? '—'}</span></span>
+                  <span>Min deposit: <span className="font-medium text-foreground">{off.minDeposit ?? '—'}</span></span>
                   <span>Regulator: <span className="font-medium text-foreground">{r.regulator ?? '—'}</span></span>
                 </div>
               </div>
@@ -134,21 +172,24 @@ export async function BrandStateAvailability({
         <div className="mt-6">
           <p className="mb-2 text-sm font-medium">Other live states</p>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(0,200px))] gap-2">
-            {established.map((r) => (
-              <Link
-                key={r.slug}
-                href={`/${brandSlug}/${r.slug}/`}
-                className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm hover:bg-muted"
-              >
-                <span className="min-w-0">
-                  <span className="block font-medium">{r.name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {[bonus ? `${bonus} bonus` : null, code, r.launchYear].filter(Boolean).join(' · ')}
+            {established.map((r) => {
+              const off = offerForRegion(r.id);
+              return (
+                <Link
+                  key={r.slug}
+                  href={`/${brandSlug}/${r.slug}/`}
+                  className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm hover:bg-muted"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-medium">{r.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {[off.bonus ? `${off.bonus} bonus` : null, off.code, r.launchYear].filter(Boolean).join(' · ')}
+                    </span>
                   </span>
-                </span>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-              </Link>
-            ))}
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </Link>
+              );
+            })}
           </div>
         </div>
       ) : null}
