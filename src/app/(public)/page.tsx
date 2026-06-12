@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { brands, offers, events, eventSeries } from '@/db/schema';
+import { brands, offers, offerRegions, events, eventSeries } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
@@ -51,8 +51,17 @@ export default async function HomePage() {
       })
       .from(offers)
       .innerJoin(brands, eq(offers.brandId, brands.id))
-      .where(eq(offers.status, 'active'))
-      .orderBy(desc(offers.priority), desc(offers.lastVerifiedAt))
+      // National only — the homepage feature must never surface a region-restricted
+      // offer (same rule as the brand-page hero). National = no offer_regions rows
+      // (sql.raw for the correlated outer offers.id — Sprint H gotcha).
+      .where(
+        and(
+          eq(offers.status, 'active'),
+          sql`not exists (select 1 from ${offerRegions} r where r.offer_id = ${sql.raw('"offers"."id"')})`,
+        ),
+      )
+      // Prefer a national is_featured offer; else best national by priority then amount.
+      .orderBy(desc(offers.isFeatured), desc(offers.priority), sql`${offers.bonusAmountCents} desc nulls last`)
       .limit(1),
     db
       .select({
