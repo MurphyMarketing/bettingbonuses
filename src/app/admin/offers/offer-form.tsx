@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, type ReactNode } from 'react';
+import { useActionState, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,7 +95,11 @@ export function OfferForm({
 }: OfferFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   const errs = state.errors ?? {};
-  const selected = new Set(selectedRegionIds);
+  // Track region selection so the Featured toggle can be gated on it: a
+  // region-restricted offer can never be the national brand-page hero.
+  const [regionIds, setRegionIds] = useState<Set<string>>(new Set(selectedRegionIds));
+  const [isFeatured, setIsFeatured] = useState(values.isFeatured);
+  const isRegionRestricted = regionIds.size > 0;
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
@@ -250,15 +254,29 @@ export function OfferForm({
       </section>
 
       {/* Flags */}
-      <section className="flex flex-wrap gap-6">
+      <section className="flex flex-wrap gap-x-8 gap-y-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="isExclusive" defaultChecked={values.isExclusive} className="size-4" />
           Exclusive offer
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="isFeatured" defaultChecked={values.isFeatured} className="size-4" />
-          Featured
-        </label>
+        <div>
+          <label className={`flex items-center gap-2 text-sm ${isRegionRestricted ? 'text-muted-foreground' : ''}`}>
+            <input
+              type="checkbox"
+              name="isFeatured"
+              checked={isFeatured && !isRegionRestricted}
+              disabled={isRegionRestricted}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              className="size-4"
+            />
+            Featured
+          </label>
+          <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+            {isRegionRestricted
+              ? 'Featured applies to nationally-available offers. Uncheck all regions to feature this offer.'
+              : 'Shown as the headline offer on the brand page. One per brand.'}
+          </p>
+        </div>
       </section>
 
       {/* Regions multi-select */}
@@ -270,7 +288,15 @@ export function OfferForm({
                 type="checkbox"
                 name="regionIds"
                 value={r.value}
-                defaultChecked={selected.has(r.value)}
+                checked={regionIds.has(r.value)}
+                onChange={(e) =>
+                  setRegionIds((prev) => {
+                    const next = new Set(prev);
+                    if (e.target.checked) next.add(r.value);
+                    else next.delete(r.value);
+                    return next;
+                  })
+                }
                 className="size-4"
               />
               {r.label}

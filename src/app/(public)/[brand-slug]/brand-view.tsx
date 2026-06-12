@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Check, X } from 'lucide-react';
 import { db } from '@/db';
-import { brands, companies, offers, authors, events } from '@/db/schema';
+import { brands, companies, offers, offerRegions, authors, events } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
@@ -55,6 +55,11 @@ export async function BrandView({ brand }: { brand: Brand }) {
         validFrom: offers.validFrom,
         validTo: offers.validTo,
         lastVerifiedAt: offers.lastVerifiedAt,
+        priority: offers.priority,
+        isFeatured: offers.isFeatured,
+        // National = no offer_regions rows. Region-restricted offers never
+        // qualify as the auto-selected hero.
+        isNational: sql<boolean>`not exists (select 1 from ${offerRegions} r where r.offer_id = ${offers.id})`,
       })
       .from(offers)
       .where(and(eq(offers.brandId, brand.id), eq(offers.status, 'active')))
@@ -89,8 +94,18 @@ export async function BrandView({ brand }: { brand: Brand }) {
 
   const successor = successorRows[0];
   const companyName = company[0]?.name;
-  const hero = activeOffers[0];
-  const rest = activeOffers.slice(1);
+  // Featured-offer hero selection — the hero is ALWAYS a nationally-available
+  // offer (no offer_regions rows). A region-restricted offer never appears in
+  // the national hero, even if is_featured is set on it.
+  //  (1) the brand's featured offer IF it is national (admin's deliberate pick);
+  //  (2) else the best national offer, priority desc then amount desc;
+  //  (3) else no hero (the "offers vary by state" prompt renders instead).
+  const featuredNational = activeOffers.find((o) => o.isFeatured && o.isNational);
+  const bestNational = activeOffers
+    .filter((o) => o.isNational)
+    .sort((a, b) => b.priority - a.priority || (b.bonusAmountCents ?? 0) - (a.bonusAmountCents ?? 0))[0];
+  const hero = featuredNational ?? bestNational ?? null;
+  const rest = activeOffers.filter((o) => o.id !== hero?.id);
   // Soonest current/upcoming event with a live offer from this brand (indicator).
   const eventTie = eventTieRows
     .map((e) => ({ ...e, status: eventTimeStatus(e) }))
@@ -168,11 +183,19 @@ export async function BrandView({ brand }: { brand: Brand }) {
         <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
       </div>
 
-      {/* Hero — best current offer */}
+      {/* Hero — featured offer */}
       {hero ? (
         <section id="brand-offers" className="mt-8 scroll-mt-20">
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Best current offer</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Featured offer</h2>
           <OfferCard offer={offersForCard(hero)} brandSlug={brand.slug} featured />
+        </section>
+      ) : activeOffers.length ? (
+        // Only region-restricted offers and none featured: don't surface a
+        // state-specific offer as the national headline — point to state offers.
+        <section id="brand-offers" className="mt-8 scroll-mt-20 rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <p className="text-sm font-medium text-primary">
+            {brand.name} offers vary by state — see the offers below and pick your state for the current deal.
+          </p>
         </section>
       ) : (
         <p className="mt-8 text-muted-foreground">No current offers for {brand.name}. Check back soon.</p>

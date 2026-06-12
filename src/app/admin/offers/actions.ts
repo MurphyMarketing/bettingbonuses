@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
@@ -108,6 +108,15 @@ async function syncRegions(offerId: number, regionIds: number[]) {
   }
 }
 
+/** Enforce one featured offer per brand: clear is_featured on the brand's other
+ *  offers so the just-saved offer is the only featured one. No-op otherwise. */
+async function enforceSingleFeatured(brandId: number, keepOfferId: number) {
+  await db
+    .update(offers)
+    .set({ isFeatured: false, updatedAt: new Date() })
+    .where(and(eq(offers.brandId, brandId), ne(offers.id, keepOfferId), eq(offers.isFeatured, true)));
+}
+
 export async function createOffer(_prev: OfferFormState, formData: FormData): Promise<OfferFormState> {
   const parsed = offerSchema.safeParse(offerFormToRaw(formData));
   if (!parsed.success) return { errors: toFieldErrors(parsed.error) };
@@ -120,6 +129,7 @@ export async function createOffer(_prev: OfferFormState, formData: FormData): Pr
   try {
     const [created] = await db.insert(offers).values(toColumns(data, checked.validTo)).returning({ id: offers.id });
     await syncRegions(created.id, regionIds);
+    if (data.isFeatured) await enforceSingleFeatured(data.brandId, created.id);
   } catch {
     return { errors: { _form: ['Could not save the offer. Please try again.'] } };
   }
@@ -143,6 +153,7 @@ export async function updateOffer(id: number, _prev: OfferFormState, formData: F
       .set({ ...toColumns(data, checked.validTo), updatedAt: new Date() })
       .where(eq(offers.id, id));
     await syncRegions(id, regionIds);
+    if (data.isFeatured) await enforceSingleFeatured(data.brandId, id);
   } catch {
     return { errors: { _form: ['Could not save the offer. Please try again.'] } };
   }
