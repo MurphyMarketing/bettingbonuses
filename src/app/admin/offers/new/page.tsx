@@ -46,13 +46,25 @@ export async function loadOptions() {
   };
 }
 
-export default async function NewOfferPage() {
-  const options = await loadOptions();
+export default async function NewOfferPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ brandId?: string }>;
+}) {
+  const [options, { brandId }] = await Promise.all([loadOptions(), searchParams]);
+
+  // Pre-select the brand when arriving from a brand page (?brandId=…). Only honor
+  // a brandId that actually exists in the picker; otherwise fall back to standalone.
+  const preselectBrandId = brandId && options.brands.some((b) => b.value === brandId) ? brandId : '';
+  const values = preselectBrandId ? { ...EMPTY, brandId: preselectBrandId } : EMPTY;
+  const backHref = preselectBrandId ? `/admin/brands/${preselectBrandId}/edit` : '/admin/offers';
 
   return (
     <main className="mx-auto max-w-4xl p-8">
       <div className="mb-6">
-        <Link href="/admin/offers" className="text-sm text-muted-foreground hover:underline">← Offers</Link>
+        <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
+          ← {preselectBrandId ? 'Brand' : 'Offers'}
+        </Link>
         <h1 className="mt-1 text-2xl font-semibold">New offer</h1>
       </div>
 
@@ -67,7 +79,8 @@ export default async function NewOfferPage() {
         bonusKinds={BONUS_KIND_VALUES}
         userSegments={USER_SEGMENT_VALUES}
         statuses={OFFER_STATUS_VALUES}
-        values={EMPTY}
+        values={values}
+        returnToBrandId={preselectBrandId || undefined}
         submitLabel="Create offer"
       />
     </main>

@@ -135,6 +135,13 @@ export async function createOffer(_prev: OfferFormState, formData: FormData): Pr
   }
 
   revalidatePath('/admin/offers');
+  // When created from a brand page, land back on that brand with the new offer
+  // visible so the user can immediately add another. Redirect to the saved
+  // brand (data.brandId) in case the picker was changed.
+  if (formData.get('returnToBrandId') != null) {
+    revalidatePath(`/admin/brands/${data.brandId}/edit`);
+    redirect(`/admin/brands/${data.brandId}/edit`);
+  }
   redirect('/admin/offers');
 }
 

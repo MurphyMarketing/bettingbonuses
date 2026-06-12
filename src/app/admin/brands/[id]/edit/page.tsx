@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { updateBrand, softDeleteBrand, uploadBrandLogo } from '../../actions';
 import { BrandForm, type BrandFormValues } from '../../brand-form';
 import { LogoUpload } from '../../logo-upload';
+import { BrandOffersSection } from './brand-offers-section';
 import { CATEGORY_VALUES, STATUS_VALUES } from '../../schema';
 
 export const metadata: Metadata = { title: 'Edit brand', robots: { index: false, follow: false } };
@@ -90,6 +91,8 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
           logoSquareUrl={brand.logoSquareUrl}
         />
       </section>
+
+      <BrandOffersSection brandId={id} />
 
       <BrandForm
         action={updateBrand.bind(null, id)}

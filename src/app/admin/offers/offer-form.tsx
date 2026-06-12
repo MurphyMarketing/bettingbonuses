@@ -53,6 +53,9 @@ type OfferFormProps = {
   userSegments: readonly string[];
   statuses: readonly string[];
   values: OfferFormValues;
+  /** When set (the offer was created from a brand page), the create action
+   *  redirects back to that brand's edit page instead of /admin/offers. */
+  returnToBrandId?: string;
   submitLabel: string;
 };
 
@@ -91,6 +94,7 @@ export function OfferForm({
   userSegments,
   statuses,
   values,
+  returnToBrandId,
   submitLabel,
 }: OfferFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -103,6 +107,7 @@ export function OfferForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
+      {returnToBrandId ? <input type="hidden" name="returnToBrandId" value={returnToBrandId} /> : null}
       {errs._form?.length ? (
         <p role="alert" className="text-sm text-destructive">
           {errs._form.join(' ')}
