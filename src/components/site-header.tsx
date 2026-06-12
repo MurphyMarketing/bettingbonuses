@@ -11,6 +11,7 @@ const NAV = [
   { label: 'Racing', href: '/horse-racing' },
   { label: 'DFS', href: '/dfs' },
   { label: 'States', href: '/states' },
+  { label: 'Sports', href: '/sports' },
 ];
 
 export function SiteHeader() {
