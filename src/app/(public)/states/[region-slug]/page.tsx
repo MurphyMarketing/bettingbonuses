@@ -7,6 +7,7 @@ import { regions, brandRegions, brands, offers, offerRegions } from '@/db/schema
 import { Card, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 export const revalidate = 3600;
@@ -226,15 +227,14 @@ export default async function StatePage({ params }: { params: Params }) {
                   {group.featured.map((b) => {
                     const ex = excerpt(b.context);
                     return (
-                      <Card key={b.slug} className="flex flex-row items-start gap-3 border-2 border-primary/60 p-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
-                          {b.logoSquareUrl || b.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- static logo
-                            <img src={(b.logoSquareUrl ?? b.logoUrl)!} alt={`${b.name} logo`} className="size-full object-contain" />
-                          ) : (
-                            b.name.charAt(0)
-                          )}
-                        </div>
+                      <Card key={b.slug} className="flex flex-col gap-3 border-2 border-primary/60 p-4 sm:flex-row sm:items-start">
+                        <BrandLogo
+                          name={b.name}
+                          slug={b.slug}
+                          logoUrl={b.logoUrl}
+                          logoSquareUrl={b.logoSquareUrl}
+                          className="w-full shrink-0 sm:w-[180px]"
+                        />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <CardTitle className="text-base">
@@ -255,15 +255,13 @@ export default async function StatePage({ params }: { params: Params }) {
               {group.rest.length ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.rest.map((b) => (
-                    <Card key={b.slug} className="flex flex-row items-center gap-3 p-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
-                        {b.logoSquareUrl || b.logoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- static logo
-                          <img src={(b.logoSquareUrl ?? b.logoUrl)!} alt={`${b.name} logo`} className="size-full object-contain" />
-                        ) : (
-                          b.name.charAt(0)
-                        )}
-                      </div>
+                    <Card key={b.slug} className="flex flex-col gap-3 p-3">
+                      <BrandLogo
+                        name={b.name}
+                        slug={b.slug}
+                        logoUrl={b.logoUrl}
+                        logoSquareUrl={b.logoSquareUrl}
+                      />
                       <CardTitle className="text-base">
                         <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
                       </CardTitle>

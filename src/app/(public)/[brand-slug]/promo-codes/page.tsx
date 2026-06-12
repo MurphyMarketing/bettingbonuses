@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { brands } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export const revalidate = 3600;
 export const dynamicParams = false; // only the four known category slugs
@@ -74,18 +75,13 @@ export default async function CategoryHubPage({ params }: { params: Params }) {
         {categoryBrands.map((b) => (
           <Card key={b.slug} className="flex flex-col">
             <CardHeader>
-              <div className="mb-2 flex size-10 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
-                {b.logoSquareUrl || b.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- static logo asset
-                  <img
-                    src={(b.logoSquareUrl ?? b.logoUrl)!}
-                    alt={`${b.name} logo`}
-                    className="size-full object-contain"
-                  />
-                ) : (
-                  b.name.charAt(0)
-                )}
-              </div>
+              <BrandLogo
+                name={b.name}
+                slug={b.slug}
+                logoUrl={b.logoUrl}
+                logoSquareUrl={b.logoSquareUrl}
+                className="mb-2"
+              />
               <CardTitle className="text-base">
                 <Link href={`/${b.slug}/`} className="hover:underline">
                   {b.name}
