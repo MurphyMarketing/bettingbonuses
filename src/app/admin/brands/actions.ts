@@ -1,10 +1,10 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { brands, companies, authors } from '@/db/schema';
+import { brands, companies, authors, brandRegions, regions } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
 import { slugTaken } from '@/lib/slug-check';
 import { getStorage, logoPublicUrl, LOGO_BUCKET } from '@/lib/storage';
@@ -17,6 +17,38 @@ import {
 } from './schema';
 
 /** Shared field -> column mapping for insert/update. */
+// brands.category enum -> the category hub's URL slug.
+const CATEGORY_HUB_SLUG: Record<string, string> = {
+  sportsbook: 'sportsbooks',
+  prediction_market: 'prediction-markets',
+  racing: 'horse-racing',
+  dfs: 'dfs',
+};
+
+/**
+ * Revalidate every public surface that renders this brand's logo/details: the
+ * brand page, the homepage (featured card + category logo tiles), the category
+ * hub, and — for each region the brand is live in — the state landing page and
+ * the brand × state page. All canonical no-trailing-slash paths so the keys match
+ * the cached entries (trailingSlash is false, so pages are served without a slash).
+ */
+async function revalidateBrandSurfaces(brand: { id: number; slug: string; category: string }) {
+  revalidatePath('/');
+  revalidatePath(`/${brand.slug}`);
+  const hub = CATEGORY_HUB_SLUG[brand.category];
+  if (hub) revalidatePath(`/${hub}`);
+
+  const regionRows = await db
+    .select({ slug: regions.slug })
+    .from(brandRegions)
+    .innerJoin(regions, eq(brandRegions.regionId, regions.id))
+    .where(and(eq(brandRegions.brandId, brand.id), eq(brandRegions.isActive, true)));
+  for (const r of regionRows) {
+    revalidatePath(`/states/${r.slug}`); // state landing page lists operators' logos
+    revalidatePath(`/${brand.slug}/${r.slug}`); // brand × state page
+  }
+}
+
 function toColumns(data: BrandInput, slug: string) {
   return {
     name: data.name,
@@ -165,6 +197,7 @@ export async function updateBrand(
 
   revalidatePath('/admin/brands');
   revalidatePath(`/admin/brands/${id}/edit`);
+  await revalidateBrandSurfaces({ id, slug: slugResult.slug, category: data.category });
   redirect('/admin/brands');
 }
 
@@ -201,7 +234,7 @@ export async function uploadBrandLogo(
   _prev: LogoUploadState,
   formData: FormData,
 ): Promise<LogoUploadState> {
-  const [brand] = await db.select({ slug: brands.slug }).from(brands).where(eq(brands.id, id)).limit(1);
+  const [brand] = await db.select({ slug: brands.slug, category: brands.category }).from(brands).where(eq(brands.id, id)).limit(1);
   if (!brand) return { error: 'Brand not found.' };
 
   const fields: { input: string; column: 'logoUrl' | 'logoSquareUrl'; suffix: string }[] = [
@@ -241,6 +274,6 @@ export async function uploadBrandLogo(
 
   await db.update(brands).set({ ...updates, updatedAt: new Date() }).where(eq(brands.id, id));
   revalidatePath(`/admin/brands/${id}/edit`);
-  revalidatePath(`/${brand.slug}/`); // public brand page (ISR)
+  await revalidateBrandSurfaces({ id, slug: brand.slug, category: brand.category });
   return { ok: true };
 }
