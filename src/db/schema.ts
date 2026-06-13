@@ -114,6 +114,9 @@ export const brands = pgTable('brands', {
   shortDescription: text('short_description'),
   introParagraph: text('intro_paragraph'),                     // 200-300 word brand intro
   fullDescription: text('full_description'),                   // long-form for brand page
+  // Rich content (HTML, Tiptap output — same format as articles.body).
+  introBody: text('intro_body'),                               // renders above the page's primary content
+  body: text('body'),                                          // renders below the page's primary content
   yearFounded: integer('year_founded'),
 
   // Structured review content (all nullable; admin-edited)
@@ -490,3 +493,18 @@ export const affiliateLinksRelations = relations(affiliateLinks, ({ one }) => ({
   brand: one(brands, { fields: [affiliateLinks.brandId], references: [brands.id] }),
   offer: one(offers, { fields: [affiliateLinks.offerId], references: [offers.id] }),
 }));
+
+/* ============================================================
+ * PAGE_CONTENT — admin-editable rich content for the non-brand hub/index pages
+ * (category hubs + the states/sports index pages). One row per page, keyed by a
+ * stable page_key. Two rich HTML slots (same format as articles.body): intro_body
+ * renders above the page's primary content, body below. Empty slot renders nothing.
+ * ========================================================== */
+export const pageContent = pgTable('page_content', {
+  pageKey: text('page_key').primaryKey(),                      // 'sportsbooks', 'states-index', etc.
+  label: text('label').notNull(),                              // admin display name
+  introBody: text('intro_body'),                               // renders above primary content
+  body: text('body'),                                          // renders below primary content
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

@@ -113,6 +113,13 @@
       "when": 1781296657724,
       "tag": "0015_collapse_event_layer",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1781328221537,
+      "tag": "0016_page_content_and_brand_rich_body",
+      "breakpoints": true
     }
   ]
 }
