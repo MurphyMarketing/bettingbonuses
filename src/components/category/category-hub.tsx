@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { RichContent } from '@/components/rich-content';
-import { getPageContent } from '@/lib/page-content';
+import { getPageContent, getPageMeta } from '@/lib/page-content';
+import { metaOrDefault } from '@/lib/meta';
 
 /**
  * Category hub, rendered at the bare /[category]/ root (e.g. /sportsbooks/).
@@ -32,15 +33,19 @@ export function isCategorySlug(slug: string): boolean {
 }
 
 /** Metadata for a category hub, or null if the slug isn't a category. */
-export function categoryHubMetadata(categorySlug: string): Metadata | null {
+export async function categoryHubMetadata(categorySlug: string): Promise<Metadata | null> {
   const cfg = CATEGORIES[categorySlug];
   if (!cfg) return null;
-  const description = `Compare the best ${cfg.noun} promo codes and sign-up bonuses from legal US operators. Verified offers, updated regularly.`;
+  // Defaults (templates) are the fallback; page_content overrides win when set.
+  const defaultDescription = `Compare the best ${cfg.noun} promo codes and sign-up bonuses from legal US operators. Verified offers, updated regularly.`;
+  const meta = await getPageMeta(categorySlug);
+  const title = metaOrDefault(meta.metaTitle, cfg.h1);
+  const description = metaOrDefault(meta.metaDescription, defaultDescription);
   return {
-    title: cfg.h1,
+    title,
     description,
     alternates: { canonical: `/${categorySlug}/` },
-    openGraph: { title: cfg.h1, description, url: `/${categorySlug}/`, type: 'website' },
+    openGraph: { title, description, url: `/${categorySlug}/`, type: 'website' },
   };
 }
 

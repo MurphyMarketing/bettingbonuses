@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (article) return articleMetadata(article);
   const series = await getVisibleSeries(slug);
   if (series) return seriesMetadata(series);
-  const categoryMeta = categoryHubMetadata(slug);
+  const categoryMeta = await categoryHubMetadata(slug);
   if (categoryMeta) return categoryMeta;
   return { title: 'Not found' };
 }

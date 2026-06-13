@@ -6,15 +6,22 @@ import { sports } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RichContent } from '@/components/rich-content';
-import { getPageContent } from '@/lib/page-content';
+import { getPageContent, getPageMeta } from '@/lib/page-content';
+import { metaOrDefault } from '@/lib/meta';
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Sports Betting Promo Codes by Sport',
-  description: 'Find betting promo codes and sign-up bonuses by sport — football, basketball, horse racing and more, plus offers tied to upcoming events.',
-  alternates: { canonical: '/sports/' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = await getPageMeta('sports-index');
+  return {
+    title: metaOrDefault(meta.metaTitle, 'Sports Betting Promo Codes by Sport'),
+    description: metaOrDefault(
+      meta.metaDescription,
+      'Find betting promo codes and sign-up bonuses by sport — football, basketball, horse racing and more, plus offers tied to upcoming events.',
+    ),
+    alternates: { canonical: '/sports/' },
+  };
+}
 
 export default async function SportsIndexPage() {
   const rows = await db

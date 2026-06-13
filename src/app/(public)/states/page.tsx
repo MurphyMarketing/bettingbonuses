@@ -4,16 +4,22 @@ import { db } from '@/db';
 import { regions, brandRegions, brands } from '@/db/schema';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { RichContent } from '@/components/rich-content';
-import { getPageContent } from '@/lib/page-content';
+import { getPageContent, getPageMeta } from '@/lib/page-content';
+import { metaOrDefault } from '@/lib/meta';
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Sports Betting by State',
-  description:
-    'Find the best legal sports betting promo codes and bonuses in your state. Browse every US state and DC where the operators we track are live.',
-  alternates: { canonical: '/states/' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = await getPageMeta('states-index');
+  return {
+    title: metaOrDefault(meta.metaTitle, 'Sports Betting by State'),
+    description: metaOrDefault(
+      meta.metaDescription,
+      'Find the best legal sports betting promo codes and bonuses in your state. Browse every US state and DC where the operators we track are live.',
+    ),
+    alternates: { canonical: '/states/' },
+  };
+}
 
 export default async function StatesIndexPage() {
   const rows = await db

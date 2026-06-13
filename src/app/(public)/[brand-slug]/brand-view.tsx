@@ -12,6 +12,7 @@ import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
 import { RichContent } from '@/components/rich-content';
+import { metaOrDefault } from '@/lib/meta';
 import { eventTimeStatus } from '@/lib/event-time';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
@@ -29,14 +30,18 @@ export async function getVisibleBrand(slug: string): Promise<Brand | null> {
 }
 
 export function brandMetadata(brand: Brand): Metadata {
-  const description =
+  // Defaults (the existing templates) become the fallback when no override is set.
+  const defaultTitle = `${brand.name} Promo Code & Bonus`;
+  const defaultDescription =
     brand.shortDescription ??
     `Current ${brand.name} promo codes, sign-up bonuses, and offers — with verified, up-to-date details.`;
+  const title = metaOrDefault(brand.metaTitle, defaultTitle);
+  const description = metaOrDefault(brand.metaDescription, defaultDescription);
   return {
-    title: `${brand.name} Promo Code & Bonus`,
+    title,
     description,
     alternates: { canonical: `/${brand.slug}/` },
-    openGraph: { title: `${brand.name} Promo Code & Bonus`, description, url: `/${brand.slug}/`, type: 'website' },
+    openGraph: { title, description, url: `/${brand.slug}/`, type: 'website' },
   };
 }
 
