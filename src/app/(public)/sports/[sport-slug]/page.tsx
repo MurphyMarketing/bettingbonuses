@@ -38,7 +38,27 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!sport) return { title: 'Not found' };
   const title = `${sport.name} Betting Promo Codes`;
   const description = `Current ${sport.name} betting promo codes, sign-up bonuses, and offers for upcoming ${sport.name} events.`;
-  return { title, description, alternates: { canonical: `/sports/${sport.slug}/` }, openGraph: { title, description, url: `/sports/${sport.slug}/`, type: 'website' } };
+
+  // Thin-page guard: a sport with no events AND no offers has nothing to index.
+  // noindex it per-page so it stays out of the index once the sitewide noindex
+  // lifts post-cutover (dormant under the current sitewide noindex until then).
+  const sportSeriesIds = db.select({ id: eventSeries.id }).from(eventSeries).where(eq(eventSeries.sportId, sport.id));
+  const [[ev], [off]] = await Promise.all([
+    db.select({ c: sql<number>`count(*)::int` }).from(eventSeries).where(eq(eventSeries.sportId, sport.id)),
+    db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(offers)
+      .where(and(eq(offers.status, 'active'), or(eq(offers.sportId, sport.id), inArray(offers.seriesId, sportSeriesIds)))),
+  ]);
+  const isThin = (ev?.c ?? 0) === 0 && (off?.c ?? 0) === 0;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/sports/${sport.slug}/` },
+    openGraph: { title, description, url: `/sports/${sport.slug}/`, type: 'website' },
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 export default async function SportHubPage({ params }: { params: Params }) {

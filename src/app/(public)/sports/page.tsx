@@ -26,8 +26,6 @@ export default async function SportsIndexPage() {
     .from(sports)
     .orderBy(asc(sports.displayOrder), asc(sports.name));
 
-  const visible = rows.filter((r) => r.offerCount > 0 || r.upcomingCount > 0);
-
   return (
     <div className="py-8">
       <h1 className="text-3xl font-bold tracking-tight">Sports betting promo codes by sport</h1>
@@ -35,26 +33,29 @@ export default async function SportsIndexPage() {
         Browse current betting promos by sport and jump to offers tied to the biggest upcoming events.
       </p>
 
-      {visible.length === 0 ? (
-        <p className="mt-8 text-muted-foreground">No sport-specific offers or upcoming events right now — check back soon.</p>
-      ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((s) => (
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map((s) => {
+          const hasContent = s.offerCount > 0 || s.upcomingCount > 0;
+          return (
             <Link key={s.slug} href={`/sports/${s.slug}/`}>
               <Card className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-lg font-semibold">{s.name}</span>
                   {s.category ? <Badge variant="outline">{s.category}</Badge> : null}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {s.offerCount} active offer{s.offerCount === 1 ? '' : 's'}
-                  {s.upcomingCount > 0 ? ` · ${s.upcomingCount} upcoming event${s.upcomingCount === 1 ? '' : 's'}` : ''}
-                </p>
+                {hasContent ? (
+                  <p className="text-sm text-muted-foreground">
+                    {s.offerCount} active offer{s.offerCount === 1 ? '' : 's'}
+                    {s.upcomingCount > 0 ? ` · ${s.upcomingCount} upcoming event${s.upcomingCount === 1 ? '' : 's'}` : ''}
+                  </p>
+                ) : (
+                  <p className="text-sm italic text-muted-foreground/70">Offers coming soon</p>
+                )}
               </Card>
             </Link>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
