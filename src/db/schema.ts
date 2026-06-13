@@ -117,6 +117,9 @@ export const brands = pgTable('brands', {
   // Rich content (HTML, Tiptap output — same format as articles.body).
   introBody: text('intro_body'),                               // renders above the page's primary content
   body: text('body'),                                          // renders below the page's primary content
+  // Per-page SEO overrides (nullable; blank -> fall back to the template default).
+  metaTitle: text('meta_title'),
+  metaDescription: text('meta_description'),
   yearFounded: integer('year_founded'),
 
   // Structured review content (all nullable; admin-edited)
@@ -505,6 +508,9 @@ export const pageContent = pgTable('page_content', {
   label: text('label').notNull(),                              // admin display name
   introBody: text('intro_body'),                               // renders above primary content
   body: text('body'),                                          // renders below primary content
+  // Per-page SEO overrides (nullable; blank -> fall back to the template default).
+  metaTitle: text('meta_title'),
+  metaDescription: text('meta_description'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
