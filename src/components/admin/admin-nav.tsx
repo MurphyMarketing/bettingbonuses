@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
   { label: 'Offers', href: '/admin/offers', matchPrefix: '/admin/offers' },
   { label: 'Events', href: '/admin/events', matchPrefix: '/admin/events' },
   { label: 'Articles', href: '/admin/articles', matchPrefix: '/admin/articles' },
+  { label: 'Page content', href: '/admin/page-content', matchPrefix: '/admin/page-content' },
   { label: 'Authors', href: '/admin/authors', matchPrefix: '/admin/authors' },
   { label: 'States', href: '/admin/states', matchPrefix: '/admin/states' },
   { label: 'Leagues & sports', href: '/admin/sports', matchPrefix: '/admin/sports' },
