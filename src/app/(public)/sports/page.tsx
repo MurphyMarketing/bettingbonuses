@@ -5,6 +5,8 @@ import { db } from '@/db';
 import { sports } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RichContent } from '@/components/rich-content';
+import { getPageContent } from '@/lib/page-content';
 
 export const revalidate = 3600;
 
@@ -26,12 +28,16 @@ export default async function SportsIndexPage() {
     .from(sports)
     .orderBy(asc(sports.displayOrder), asc(sports.name));
 
+  const pc = await getPageContent('sports-index');
+
   return (
     <div className="py-8">
       <h1 className="text-3xl font-bold tracking-tight">Sports betting promo codes by sport</h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">
         Browse current betting promos by sport and jump to offers tied to the biggest upcoming events.
       </p>
+
+      <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((s) => {
@@ -56,6 +62,8 @@ export default async function SportsIndexPage() {
           );
         })}
       </div>
+
+      <RichContent html={pc.body} className="mt-10 max-w-3xl" />
     </div>
   );
 }

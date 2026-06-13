@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer } from '@/components/offer-card';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
+import { RichContent } from '@/components/rich-content';
 import { eventTimeStatus } from '@/lib/event-time';
 import { categoryLabel } from '@/app/admin/brands/labels';
 
@@ -188,6 +189,9 @@ export async function BrandView({ brand }: { brand: Brand }) {
         <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
       </div>
 
+      {/* Admin-authored rich intro (renders above the primary content) */}
+      <RichContent html={brand.introBody} className="mt-6 max-w-3xl" />
+
       {/* Hero — featured offer */}
       {hero ? (
         <section id="brand-offers" className="mt-8 scroll-mt-20">
@@ -341,6 +345,9 @@ export async function BrandView({ brand }: { brand: Brand }) {
           </div>
         </section>
       ) : null}
+
+      {/* Admin-authored rich body (renders below the primary content) */}
+      <RichContent html={brand.body} className="mt-10 max-w-3xl" />
 
       <AuthorByline authors={bylineAuthors} />
     </div>

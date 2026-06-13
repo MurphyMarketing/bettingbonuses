@@ -3,6 +3,8 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { regions, brandRegions, brands } from '@/db/schema';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
+import { RichContent } from '@/components/rich-content';
+import { getPageContent } from '@/lib/page-content';
 
 export const revalidate = 3600;
 
@@ -23,6 +25,7 @@ export default async function StatesIndexPage() {
     .orderBy(regions.name);
 
   const slugByCode = new Map(rows.map((r) => [r.code, r.slug]));
+  const pc = await getPageContent('states-index');
 
   return (
     <div className="py-8">
@@ -31,6 +34,8 @@ export default async function StatesIndexPage() {
         Legal sports betting offers vary by state. Pick your state to see which sportsbooks,
         prediction markets, racebooks, and DFS apps are live there — and their current promos.
       </p>
+
+      <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
       <div className="mt-8">
         <StateAvailabilityGrid
@@ -41,6 +46,8 @@ export default async function StatesIndexPage() {
           }}
         />
       </div>
+
+      <RichContent html={pc.body} className="mt-10 max-w-3xl" />
     </div>
   );
 }

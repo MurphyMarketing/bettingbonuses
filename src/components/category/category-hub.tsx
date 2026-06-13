@@ -6,6 +6,8 @@ import { brands } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import { RichContent } from '@/components/rich-content';
+import { getPageContent } from '@/lib/page-content';
 
 /**
  * Category hub, rendered at the bare /[category]/ root (e.g. /sportsbooks/).
@@ -46,17 +48,20 @@ export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
   const cfg = CATEGORIES[categorySlug];
   if (!cfg) return null; // caller guards with isCategorySlug; defensive only
 
-  const categoryBrands = await db
-    .select({
-      slug: brands.slug,
-      name: brands.name,
-      shortDescription: brands.shortDescription,
-      logoSquareUrl: brands.logoSquareUrl,
-      logoUrl: brands.logoUrl,
-    })
-    .from(brands)
-    .where(and(eq(brands.category, cfg.category), eq(brands.status, 'active')))
-    .orderBy(asc(brands.name));
+  const [categoryBrands, pc] = await Promise.all([
+    db
+      .select({
+        slug: brands.slug,
+        name: brands.name,
+        shortDescription: brands.shortDescription,
+        logoSquareUrl: brands.logoSquareUrl,
+        logoUrl: brands.logoUrl,
+      })
+      .from(brands)
+      .where(and(eq(brands.category, cfg.category), eq(brands.status, 'active')))
+      .orderBy(asc(brands.name)),
+    getPageContent(categorySlug),
+  ]);
 
   return (
     <div className="py-8">
@@ -64,6 +69,9 @@ export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
       <p className="mt-3 max-w-2xl text-muted-foreground">
         Current sign-up offers from legal US {cfg.noun} operators. Every offer is checked and dated.
       </p>
+
+      {/* Admin-authored rich intro (above the brand grid) */}
+      <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {categoryBrands.map((b) => (
@@ -95,6 +103,9 @@ export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
       {categoryBrands.length === 0 ? (
         <p className="mt-8 text-muted-foreground">No brands in this category yet.</p>
       ) : null}
+
+      {/* Admin-authored rich body (below the brand grid) */}
+      <RichContent html={pc.body} className="mt-10 max-w-3xl" />
     </div>
   );
 }
