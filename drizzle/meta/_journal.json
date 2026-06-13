@@ -127,6 +127,13 @@
       "when": 1781377250960,
       "tag": "0017_page_meta_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1781377310960,
+      "tag": "0018_remove_free_bet_free_play",
+      "breakpoints": true
     }
   ]
 }

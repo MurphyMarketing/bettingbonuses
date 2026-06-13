@@ -11,8 +11,6 @@ export const BONUS_KIND_LABELS: Record<string, string> = {
   parlay_boost: 'Parlay boost',
   cashback: 'Cashback',
   reload_bonus: 'Reload bonus',
-  free_bet: 'Free bet',
-  free_play: 'Free play',
   profit_boost: 'Profit boost',
   other: 'Other',
 };

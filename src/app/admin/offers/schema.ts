@@ -5,15 +5,11 @@ export const BONUS_KIND_VALUES = bonusKindEnum.enumValues;
 export const USER_SEGMENT_VALUES = userSegmentEnum.enumValues;
 export const OFFER_STATUS_VALUES = offerStatusEnum.enumValues;
 
-// Bonus kinds an offer may NOT be created/saved as — legally prohibited to offer
-// as claimable promotions. Kept out of the picker AND rejected on save. (The enum
-// values themselves are removed in the destructive data migration.)
-export const PROHIBITED_BONUS_KINDS: readonly string[] = ['free_bet', 'free_play'];
-
-// Bonus kinds offered in the admin picker (everything except the prohibited ones).
-export const ASSIGNABLE_BONUS_KIND_VALUES: readonly string[] = BONUS_KIND_VALUES.filter(
-  (k) => !PROHIBITED_BONUS_KINDS.includes(k),
-);
+// Bonus kinds offered in the admin picker. The legally-prohibited "free_bet" /
+// "free_play" kinds were removed from the bonus_kind enum in migration 0018, so
+// there is nothing left to filter out — this stays as the stable name the offer
+// forms import (equal to all enum values).
+export const ASSIGNABLE_BONUS_KIND_VALUES: readonly string[] = BONUS_KIND_VALUES;
 
 const optionalText = z
   .string()
@@ -63,9 +59,7 @@ const optionalJson = z
 
 export const offerSchema = z.object({
   brandId: z.coerce.number().int().positive('Select a brand'),
-  bonusKind: z
-    .enum(BONUS_KIND_VALUES, { message: 'Choose a bonus type' })
-    .refine((k) => !PROHIBITED_BONUS_KINDS.includes(k), { message: 'That bonus type is not available.' }),
+  bonusKind: z.enum(BONUS_KIND_VALUES, { message: 'Choose a bonus type' }),
   userSegment: z.enum(USER_SEGMENT_VALUES).default('new'),
   seriesId: z.coerce.number().int().positive().nullable().optional(),
   sportId: z.coerce.number().int().positive().nullable().optional(),

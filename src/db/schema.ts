@@ -53,8 +53,6 @@ export const bonusKindEnum = pgEnum('bonus_kind', [
   'parlay_boost',         // % bump on multi-leg parlay payouts
   'cashback',             // % of net losses returned
   'reload_bonus',         // existing-user reload match
-  'free_bet',             // fixed-stake free bet token
-  'free_play',            // DFS-specific free entry
   'profit_boost',         // percentage profit increase on winning bets
   'other',                // catch-all; details in description
 ]);
