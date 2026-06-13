@@ -8,6 +8,7 @@ import { brands, companies, authors, brandRegions, regions } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
 import { slugTaken } from '@/lib/slug-check';
 import { getStorage, logoPublicUrl, LOGO_BUCKET } from '@/lib/storage';
+import { revalidatePublic } from '@/lib/revalidate-path';
 import {
   brandSchema,
   brandFormToRaw,
@@ -33,10 +34,10 @@ const CATEGORY_HUB_SLUG: Record<string, string> = {
  * the cached entries (trailingSlash is false, so pages are served without a slash).
  */
 async function revalidateBrandSurfaces(brand: { id: number; slug: string; category: string }) {
-  revalidatePath('/');
-  revalidatePath(`/${brand.slug}`);
+  revalidatePublic('/');
+  revalidatePublic(`/${brand.slug}`);
   const hub = CATEGORY_HUB_SLUG[brand.category];
-  if (hub) revalidatePath(`/${hub}`);
+  if (hub) revalidatePublic(`/${hub}`);
 
   const regionRows = await db
     .select({ slug: regions.slug })
@@ -44,8 +45,8 @@ async function revalidateBrandSurfaces(brand: { id: number; slug: string; catego
     .innerJoin(regions, eq(brandRegions.regionId, regions.id))
     .where(and(eq(brandRegions.brandId, brand.id), eq(brandRegions.isActive, true)));
   for (const r of regionRows) {
-    revalidatePath(`/states/${r.slug}`); // state landing page lists operators' logos
-    revalidatePath(`/${brand.slug}/${r.slug}`); // brand × state page
+    revalidatePublic(`/states/${r.slug}`); // state landing page lists operators' logos
+    revalidatePublic(`/${brand.slug}/${r.slug}`); // brand × state page
   }
 }
 

@@ -8,6 +8,7 @@ import { db } from '@/db';
 import { authors } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
 import { getStorage, publicUrl, AUTHOR_AVATAR_BUCKET } from '@/lib/storage';
+import { revalidatePublic } from '@/lib/revalidate-path';
 import { authorSchema, authorFormToRaw, toFieldErrors, type AuthorFormState, type AuthorInput } from './schema';
 
 function toColumns(data: AuthorInput, slug: string) {
@@ -63,7 +64,7 @@ export async function uploadAuthorAvatar(id: string, _prev: AvatarUploadState, f
 
   await db.update(authors).set({ avatarUrl: `${publicUrl(AUTHOR_AVATAR_BUCKET, objectPath)}?v=${Date.now()}`, updatedAt: new Date() }).where(eq(authors.id, id));
   revalidatePath(`/admin/authors/${id}/edit`);
-  revalidatePath(`/authors/${author.slug}/`);
+  revalidatePublic(`/authors/${author.slug}`);
   return { ok: true };
 }
 
@@ -106,7 +107,7 @@ export async function updateAuthor(id: string, _prev: AuthorFormState, formData:
     return { errors: { _form: ['Could not save the author. Please try again.'] } };
   }
   revalidatePath('/admin/authors');
-  revalidatePath(`/authors/${slugResult.slug}/`);
+  revalidatePublic(`/authors/${slugResult.slug}`);
   redirect('/admin/authors');
 }
 

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { eventSeries } from '@/db/schema';
 import { slugify } from '@/lib/slug';
+import { revalidatePublic } from '@/lib/revalidate-path';
 
 export type EventFormState = { error?: string };
 
@@ -92,7 +93,7 @@ export async function updateEvent(id: number, _prev: EventFormState, fd: FormDat
     })
     .where(eq(eventSeries.id, id));
   revalidatePath('/admin/events');
-  revalidatePath(`/${slug}/`);
+  revalidatePublic(`/${slug}`);
   redirect('/admin/events');
 }
 

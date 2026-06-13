@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { pageContent } from '@/db/schema';
+import { revalidatePublic } from '@/lib/revalidate-path';
 
 export type PageContentFormState = { error?: string };
 
@@ -43,6 +44,6 @@ export async function updatePageContent(
 
   revalidatePath('/admin/page-content');
   const publicPath = PUBLIC_PATH[pageKey];
-  if (publicPath) revalidatePath(publicPath);
+  if (publicPath) revalidatePublic(publicPath);
   redirect('/admin/page-content');
 }

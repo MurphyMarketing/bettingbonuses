@@ -9,6 +9,7 @@ import { articles, authors } from '@/db/schema';
 import { isValidSlug, slugify } from '@/lib/slug';
 import { slugTaken } from '@/lib/slug-check';
 import { getStorage, publicUrl, ARTICLE_IMAGE_BUCKET } from '@/lib/storage';
+import { revalidatePublic } from '@/lib/revalidate-path';
 import {
   articleSchema,
   articleFormToRaw,
@@ -118,7 +119,7 @@ export async function updateArticle(id: string, _prev: ArticleFormState, formDat
   }
 
   revalidatePath('/admin/articles');
-  revalidatePath(`/${slugResult.slug}/`);
+  revalidatePublic(`/${slugResult.slug}`);
   redirect('/admin/articles');
 }
 

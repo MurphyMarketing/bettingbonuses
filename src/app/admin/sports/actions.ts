@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { sports } from '@/db/schema';
 import { slugify } from '@/lib/slug';
+import { revalidatePublic } from '@/lib/revalidate-path';
 
 export type SportFormState = { error?: string };
 
@@ -51,7 +52,7 @@ export async function updateSport(id: number, _prev: SportFormState, fd: FormDat
     .set({ name: p.name, slug, category: p.category || null, displayOrder: p.displayOrder ? Number(p.displayOrder) : 100, intro: p.intro || null, updatedAt: new Date() })
     .where(eq(sports.id, id));
   revalidatePath('/admin/sports');
-  revalidatePath(`/sports/${slug}/`);
+  revalidatePublic(`/sports/${slug}`);
   redirect('/admin/sports');
 }
 

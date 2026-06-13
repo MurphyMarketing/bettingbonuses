@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { brandRegions, brands, regions } from '@/db/schema';
+import { revalidatePublic } from '@/lib/revalidate-path';
 
 export type BrandStateFormState = { error?: string };
 
@@ -45,7 +46,7 @@ export async function updateBrandState(
 
   const [b] = await db.select({ slug: brands.slug }).from(brands).where(eq(brands.id, brandId)).limit(1);
   const [r] = await db.select({ slug: regions.slug }).from(regions).where(eq(regions.id, regionId)).limit(1);
-  if (b && r) revalidatePath(`/${b.slug}/${r.slug}/`);
+  if (b && r) revalidatePublic(`/${b.slug}/${r.slug}`);
   revalidatePath(`/admin/brands/${brandId}/states`);
   redirect(`/admin/brands/${brandId}/states`);
 }
