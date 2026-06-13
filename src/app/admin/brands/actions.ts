@@ -68,6 +68,8 @@ function toColumns(data: BrandInput, slug: string) {
     fullDescription: data.fullDescription ?? null,
     introBody: data.introBody ?? null,
     body: data.body ?? null,
+    metaTitle: data.metaTitle ?? null,
+    metaDescription: data.metaDescription ?? null,
     yearFounded: data.yearFounded ?? null,
     launchDate: data.launchDate ?? null,
     sunsetDate: data.sunsetDate ?? null,

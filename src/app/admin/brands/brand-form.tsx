@@ -16,6 +16,7 @@ import { slugify } from '@/lib/slug';
 import { SortableArrayField } from '@/components/ui/sortable-array-field';
 import { RichContentField } from '@/components/admin/rich-content-field';
 import { uploadEditorImage } from '@/components/admin/editor-image';
+import { MetaFields } from '@/components/admin/meta-fields';
 import { categoryLabel, statusLabel } from './labels';
 import type { BrandFormState } from './schema';
 
@@ -46,6 +47,9 @@ export type BrandFormValues = {
   // Rich HTML slots (render above/below the brand page primary content)
   introBody: string;
   body: string;
+  // Per-page SEO overrides
+  metaTitle: string;
+  metaDescription: string;
   // Sprint B review content (arrays edited as one-item-per-line text)
   introParagraph: string;
   howToClaimSteps: string;
@@ -277,6 +281,13 @@ export function BrandForm({
           <Textarea id="notes" name="notes" rows={2} defaultValue={values.notes} />
         </Field>
       </section>
+
+      <MetaFields
+        defaultTitle={values.metaTitle}
+        defaultDescription={values.metaDescription}
+        titleError={errs.metaTitle}
+        descError={errs.metaDescription}
+      />
 
       {/* Rich page content — renders above (intro) and below (body) the brand page */}
       <section className="flex flex-col gap-4 rounded-lg border p-4">

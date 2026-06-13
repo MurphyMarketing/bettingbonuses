@@ -28,6 +28,8 @@ export default async function EditPageContentPage({ params }: { params: Promise<
         pageKey={row.pageKey}
         introBody={row.introBody ?? ''}
         body={row.body ?? ''}
+        metaTitle={row.metaTitle ?? ''}
+        metaDescription={row.metaDescription ?? ''}
         submitLabel="Save changes"
       />
     </main>

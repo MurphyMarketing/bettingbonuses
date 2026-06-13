@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RichContentField } from '@/components/admin/rich-content-field';
 import { uploadEditorImage } from '@/components/admin/editor-image';
+import { MetaFields } from '@/components/admin/meta-fields';
 import type { PageContentFormState } from './actions';
 
 /** Edit form for one page_content row — the two shared rich editors (intro_body
@@ -13,18 +14,24 @@ export function PageContentForm({
   pageKey,
   introBody,
   body,
+  metaTitle,
+  metaDescription,
   submitLabel,
 }: {
   action: (prev: PageContentFormState, fd: FormData) => Promise<PageContentFormState>;
   pageKey: string;
   introBody: string;
   body: string;
+  metaTitle: string;
+  metaDescription: string;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   return (
     <form action={formAction} className="flex flex-col gap-6">
       {state.error ? <p role="alert" className="text-sm text-destructive">{state.error}</p> : null}
+
+      <MetaFields defaultTitle={metaTitle} defaultDescription={metaDescription} />
 
       <RichContentField
         name="introBody"

@@ -58,6 +58,8 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
     notes: brand.notes ?? '',
     introBody: brand.introBody ?? '',
     body: brand.body ?? '',
+    metaTitle: brand.metaTitle ?? '',
+    metaDescription: brand.metaDescription ?? '',
     introParagraph: brand.introParagraph ?? '',
     howToClaimSteps: (brand.howToClaimSteps ?? []).join('\n'),
     pros: (brand.pros ?? []).join('\n'),

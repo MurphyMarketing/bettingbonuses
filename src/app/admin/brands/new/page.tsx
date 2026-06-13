@@ -16,6 +16,7 @@ const EMPTY: BrandFormValues = {
   affiliateProgram: '', defaultAffiliateLink: '', shortDescription: '',
   fullDescription: '', yearFounded: '', launchDate: '', sunsetDate: '', notes: '',
   introBody: '', body: '',
+  metaTitle: '', metaDescription: '',
   introParagraph: '', howToClaimSteps: '', pros: '', cons: '', verdict: '',
   otherPromotions: '', depositOptions: '', primaryAuthorId: '', secondaryAuthorId: '',
 };

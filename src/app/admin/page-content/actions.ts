@@ -34,10 +34,12 @@ export async function updatePageContent(
   };
   const introBody = str('introBody') || null;
   const body = str('body') || null;
+  const metaTitle = str('metaTitle') || null;
+  const metaDescription = str('metaDescription') || null;
 
   const updated = await db
     .update(pageContent)
-    .set({ introBody, body, updatedAt: new Date() })
+    .set({ introBody, body, metaTitle, metaDescription, updatedAt: new Date() })
     .where(eq(pageContent.pageKey, pageKey))
     .returning({ pageKey: pageContent.pageKey });
   if (!updated.length) return { error: 'That page no longer exists.' };
