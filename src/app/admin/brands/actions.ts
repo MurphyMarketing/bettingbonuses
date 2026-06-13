@@ -33,6 +33,8 @@ function toColumns(data: BrandInput, slug: string) {
     defaultAffiliateLink: data.defaultAffiliateLink ?? null,
     shortDescription: data.shortDescription ?? null,
     fullDescription: data.fullDescription ?? null,
+    introBody: data.introBody ?? null,
+    body: data.body ?? null,
     yearFounded: data.yearFounded ?? null,
     launchDate: data.launchDate ?? null,
     sunsetDate: data.sunsetDate ?? null,

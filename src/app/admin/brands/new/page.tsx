@@ -15,6 +15,7 @@ const EMPTY: BrandFormValues = {
   countryCode: 'US', websiteUrl: '', appStoreUrl: '', playStoreUrl: '',
   affiliateProgram: '', defaultAffiliateLink: '', shortDescription: '',
   fullDescription: '', yearFounded: '', launchDate: '', sunsetDate: '', notes: '',
+  introBody: '', body: '',
   introParagraph: '', howToClaimSteps: '', pros: '', cons: '', verdict: '',
   otherPromotions: '', depositOptions: '', primaryAuthorId: '', secondaryAuthorId: '',
 };

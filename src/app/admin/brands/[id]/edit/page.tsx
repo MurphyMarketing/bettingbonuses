@@ -56,6 +56,8 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
     launchDate: toDateInput(brand.launchDate),
     sunsetDate: toDateInput(brand.sunsetDate),
     notes: brand.notes ?? '',
+    introBody: brand.introBody ?? '',
+    body: brand.body ?? '',
     introParagraph: brand.introParagraph ?? '',
     howToClaimSteps: (brand.howToClaimSteps ?? []).join('\n'),
     pros: (brand.pros ?? []).join('\n'),
@@ -102,6 +104,7 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
         categories={CATEGORY_VALUES}
         statuses={STATUS_VALUES}
         values={values}
+        brandId={id}
         submitLabel="Save changes"
       />
 

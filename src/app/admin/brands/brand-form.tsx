@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/select';
 import { slugify } from '@/lib/slug';
 import { SortableArrayField } from '@/components/ui/sortable-array-field';
+import { RichContentField } from '@/components/admin/rich-content-field';
+import { uploadEditorImage } from '@/components/admin/editor-image';
 import { categoryLabel, statusLabel } from './labels';
 import type { BrandFormState } from './schema';
 
@@ -41,6 +43,9 @@ export type BrandFormValues = {
   launchDate: string;
   sunsetDate: string;
   notes: string;
+  // Rich HTML slots (render above/below the brand page primary content)
+  introBody: string;
+  body: string;
   // Sprint B review content (arrays edited as one-item-per-line text)
   introParagraph: string;
   howToClaimSteps: string;
@@ -62,6 +67,8 @@ type BrandFormProps = {
   statuses: readonly string[];
   values: BrandFormValues;
   submitLabel: string;
+  // Present in edit mode — keys the rich editors' localStorage autosave drafts.
+  brandId?: number;
 };
 
 function Field({
@@ -98,6 +105,7 @@ export function BrandForm({
   statuses,
   values,
   submitLabel,
+  brandId,
 }: BrandFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   const errs = state.errors ?? {};
@@ -268,6 +276,31 @@ export function BrandForm({
         <Field label="Internal notes" htmlFor="notes" errors={errs.notes}>
           <Textarea id="notes" name="notes" rows={2} defaultValue={values.notes} />
         </Field>
+      </section>
+
+      {/* Rich page content — renders above (intro) and below (body) the brand page */}
+      <section className="flex flex-col gap-4 rounded-lg border p-4">
+        <h2 className="text-sm font-medium">Rich page content</h2>
+        <RichContentField
+          name="introBody"
+          label="Intro content (above)"
+          hint="Rich content shown above the brand page's offers and primary content. Leave empty to render nothing."
+          errors={errs.introBody}
+          defaultValue={values.introBody}
+          placeholder="Intro content…"
+          onImageUpload={uploadEditorImage}
+          draft={brandId ? { mode: 'local', storageKey: `brand:${brandId}:introBody` } : undefined}
+        />
+        <RichContentField
+          name="body"
+          label="Body content (below)"
+          hint="Rich content shown below the brand page's primary content. Leave empty to render nothing."
+          errors={errs.body}
+          defaultValue={values.body}
+          placeholder="Body content…"
+          onImageUpload={uploadEditorImage}
+          draft={brandId ? { mode: 'local', storageKey: `brand:${brandId}:body` } : undefined}
+        />
       </section>
 
       {/* Review content (Sprint B) */}

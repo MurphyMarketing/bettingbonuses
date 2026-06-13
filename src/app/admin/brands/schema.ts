@@ -58,6 +58,9 @@ export const brandSchema = z.object({
   shortDescription: optionalText,
   introParagraph: optionalText,
   fullDescription: optionalText,
+  // Rich HTML slots (Tiptap output) — render above/below the brand page content.
+  introBody: optionalText,
+  body: optionalText,
   yearFounded: z.coerce.number().int().min(1800).max(2100).nullable().optional(),
   launchDate: z.coerce.date().nullable().optional(),
   sunsetDate: z.coerce.date().nullable().optional(),
@@ -119,6 +122,8 @@ export function brandFormToRaw(formData: FormData) {
     shortDescription: str('shortDescription'),
     introParagraph: str('introParagraph'),
     fullDescription: str('fullDescription'),
+    introBody: str('introBody'),
+    body: str('body'),
     yearFounded: blankToUndef('yearFounded'),
     launchDate: blankToUndef('launchDate'),
     sunsetDate: blankToUndef('sunsetDate'),
