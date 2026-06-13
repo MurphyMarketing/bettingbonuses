@@ -37,7 +37,7 @@ export function CategoryTile({
           <div className="flex flex-wrap items-center gap-1.5">
             {brands.map((b) => (
               <div key={b.slug} className="w-16 rounded-md border bg-card">
-                <BrandLogo name={b.name} slug={b.slug} logoUrl={b.logoUrl} logoSquareUrl={b.logoSquareUrl} />
+                <BrandLogo name={b.name} slug={b.slug} logoUrl={b.logoUrl} logoSquareUrl={b.logoSquareUrl} hideName />
               </div>
             ))}
             {remaining > 0 ? (

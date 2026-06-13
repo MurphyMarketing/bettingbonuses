@@ -50,12 +50,18 @@ export function BrandLogo({
   logoUrl,
   logoSquareUrl,
   className,
+  hideName = false,
 }: {
   name: string;
   slug: string;
   logoUrl?: string | null;
   logoSquareUrl?: string | null;
   className?: string;
+  // Tile/compact mode: when there's no uploaded logo, render just the deterministic
+  // tint block with no text (the full name would clip at tile sizes). Only the
+  // placeholder is affected — a real logo image always renders. Default off so
+  // every other call site keeps the full-name placeholder.
+  hideName?: boolean;
 }) {
   const src = logoUrl ?? logoSquareUrl ?? null;
   const tint = PLACEHOLDER_PALETTE[hashSlug(slug) % PLACEHOLDER_PALETTE.length];
@@ -70,12 +76,14 @@ export function BrandLogo({
           className="flex size-full items-center justify-center px-3 py-2 text-center"
           style={{ backgroundColor: tint.bg, color: tint.text }}
         >
-          <span
-            className="font-medium [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box] overflow-hidden"
-            style={{ fontSize: placeholderFontSize(name), lineHeight: 1.25 }}
-          >
-            {name}
-          </span>
+          {hideName ? null : (
+            <span
+              className="font-medium [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box] overflow-hidden"
+              style={{ fontSize: placeholderFontSize(name), lineHeight: 1.25 }}
+            >
+              {name}
+            </span>
+          )}
         </div>
       )}
     </div>
