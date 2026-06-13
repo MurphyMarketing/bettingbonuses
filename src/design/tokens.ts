@@ -51,6 +51,30 @@ export const ds = {
   /** Primary CTA: filled action color, confident, with an arrow that nudges. */
   cta:
     "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-action px-4 py-2.5 text-sm font-semibold text-action-foreground shadow-sm transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action active:translate-y-px",
+
+  // ---- Cross-component recipes (propagation pass) ----
+  // The same vocabulary the offer card established, factored out so every page
+  // shares ONE set of headings, surfaces and accents instead of re-deriving them.
+
+  /** Page H1. Display font + tight tracking; scales up on desktop. */
+  pageTitle: "font-display text-3xl font-bold tracking-tight text-balance text-foreground sm:text-4xl",
+
+  /** Section H2. */
+  sectionTitle: "font-display text-xl font-semibold tracking-tight text-foreground",
+
+  /** Intro / lead paragraph under a page title. */
+  lead: "max-w-2xl text-lg leading-relaxed text-muted-foreground",
+
+  /** Static card/tile surface — matches the offer card's ring + ticket radius
+   *  (use on raw <div> tiles; for the shared <Card> primitive, which already
+   *  carries bg/ring/rounded-xl, just add `tileHover`). */
+  tile: "rounded-card bg-card text-card-foreground ring-1 ring-foreground/10",
+
+  /** Interactive hover for clickable tiles — the same lift the offer card uses.
+   *  Replaces ad-hoc `hover:bg-muted/50`. Pair with a `group/tile` parent if you
+   *  want child hover effects. */
+  tileHover:
+    "transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-12px_oklch(0.2_0.03_256/0.25)]",
 } as const
 
 export type DesignTokens = typeof ds

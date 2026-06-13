@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { RichContent } from '@/components/rich-content';
 import { getPageContent, getPageMeta } from '@/lib/page-content';
 import { metaOrDefault } from '@/lib/meta';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600;
 
@@ -39,21 +41,21 @@ export default async function SportsIndexPage() {
 
   return (
     <div className="py-8">
-      <h1 className="text-3xl font-bold tracking-tight">Sports betting promo codes by sport</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+      <h1 className={ds.pageTitle}>Sports betting promo codes by sport</h1>
+      <p className={cn(ds.lead, 'mt-3')}>
         Browse current betting promos by sport and jump to offers tied to the biggest upcoming events.
       </p>
 
       <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-card sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((s) => {
           const hasContent = s.offerCount > 0 || s.upcomingCount > 0;
           return (
-            <Link key={s.slug} href={`/sports/${s.slug}/`}>
-              <Card className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
+            <Link key={s.slug} href={`/sports/${s.slug}/`} className="group/tile">
+              <Card className={cn('flex h-full flex-col gap-2 p-4', ds.tileHover)}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-lg font-semibold">{s.name}</span>
+                  <span className="font-display text-lg font-semibold tracking-tight">{s.name}</span>
                   {s.category ? <Badge variant="outline">{s.category}</Badge> : null}
                 </div>
                 {hasContent ? (

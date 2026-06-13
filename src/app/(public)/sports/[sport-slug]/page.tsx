@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/card';
 import { OfferCard } from '@/components/offer-card';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { activeOfferCards } from '@/lib/offer-cards';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -95,22 +97,22 @@ export default async function SportHubPage({ params }: { params: Params }) {
     <div className="py-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <p className="text-sm text-muted-foreground"><Link href="/sports/" className="hover:underline">Sports</Link> / {sport.name}</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight">{sport.name} betting promo codes</h1>
+      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">{sport.name} betting promo codes</h1>
 
       {sport.intro ? (
         <div
-          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-action [&_a]:underline [&_p]:mt-3 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(sport.intro) }}
         />
       ) : null}
 
       {upcomingEvents.length ? (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">Upcoming {sport.name} events</h2>
+          <h2 className="mb-3 font-display text-lg font-semibold tracking-tight">Upcoming {sport.name} events</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((e) => (
               <Link key={e.slug} href={`/${e.slug}/`}>
-                <Card className="p-3 transition-colors hover:bg-muted/50">
+                <Card className={cn('p-3', ds.tileHover)}>
                   <span className="block font-medium">{e.name}</span>
                   {e.startsAt ? <span className="block text-xs text-muted-foreground">{shortDate(e.startsAt)}</span> : null}
                 </Card>
@@ -122,7 +124,7 @@ export default async function SportHubPage({ params }: { params: Params }) {
 
       {seriesRows.length ? (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">All {sport.name} events</h2>
+          <h2 className="mb-3 font-display text-lg font-semibold tracking-tight">All {sport.name} events</h2>
           <ul className="flex flex-wrap gap-2">
             {seriesRows.map((s) => (
               <li key={s.slug}>
@@ -134,9 +136,9 @@ export default async function SportHubPage({ params }: { params: Params }) {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">{sport.name} offers</h2>
+        <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">{sport.name} offers</h2>
         {offerCards.length ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-card sm:grid-cols-2">
             {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />)}
           </div>
         ) : (

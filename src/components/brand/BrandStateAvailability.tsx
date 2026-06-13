@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { db } from '@/db';
 import { brandRegions, regions, offers, offerRegions, brands, companies } from '@/db/schema';
 import { formatUsdCents } from '@/lib/money';
+import { ds } from '@/design/tokens';
 
 const SITE_URL = 'https://www.bettingbonuses.com';
 
@@ -98,7 +99,7 @@ export async function BrandStateAvailability({
     <section className="mt-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
-      <h2 className="text-xl font-semibold">Where {brandName} operates</h2>
+      <h2 className={ds.sectionTitle}>Where {brandName} operates</h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Live in {liveRows.length} state{liveRows.length === 1 ? '' : 's'}. Each state runs the same headline offer
         unless we note otherwise — tap a state for state-specific terms, payment options, and Responsible Gambling

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export type CategoryBrand = { name: string; slug: string; logoUrl: string | null; logoSquareUrl: string | null };
 
@@ -22,10 +24,10 @@ export function CategoryTile({
 }) {
   return (
     <Link href={`/${slug}/`} className="group">
-      <Card className="flex h-full flex-col gap-3 p-4 transition-colors hover:bg-muted/50">
+      <Card className={cn('flex h-full flex-col gap-3 p-4', ds.tileHover)}>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <span className="block font-semibold">{label}</span>
+            <span className="block font-display font-semibold tracking-tight">{label}</span>
             <span className="block text-xs text-muted-foreground">
               {brandCount} brand{brandCount === 1 ? '' : 's'}
             </span>

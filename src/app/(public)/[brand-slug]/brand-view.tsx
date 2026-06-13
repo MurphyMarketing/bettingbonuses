@@ -11,7 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/offer-card';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
+import { BrandLogo } from '@/components/brand/BrandLogo';
+import { BrandRating } from '@/components/brand/brand-rating';
 import { RichContent } from '@/components/rich-content';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 import { metaOrDefault } from '@/lib/meta';
 import { eventTimeStatus } from '@/lib/event-time';
 import { categoryLabel } from '@/app/admin/brands/labels';
@@ -20,7 +24,7 @@ const SITE_URL = 'https://www.bettingbonuses.com';
 type Brand = typeof brands.$inferSelect;
 
 const MARKDOWN_CLASS =
-  'max-w-none text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_h2]:mt-5 [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-4 [&_h3]:font-semibold [&_h3]:text-foreground [&_strong]:text-foreground';
+  'max-w-none text-sm leading-relaxed text-muted-foreground [&_a]:text-action [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_h2]:mt-5 [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-4 [&_h3]:font-semibold [&_h3]:text-foreground [&_strong]:text-foreground';
 
 /** Returns the brand if it exists and is publicly visible (active/rebranded). */
 export async function getVisibleBrand(slug: string): Promise<Brand | null> {
@@ -177,28 +181,37 @@ export async function BrandView({ brand }: { brand: Brand }) {
 
       {/* Live/upcoming event indicator — only when a brand offer is tied to one */}
       {eventTie ? (
-        <a href="#brand-offers" className="mb-4 block rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm font-medium text-primary hover:underline">
+        <a href="#brand-offers" className="mb-4 block rounded-lg border border-action/40 bg-action/5 p-3 text-sm font-medium text-action hover:underline">
           {eventTie.status === 'current' ? 'Live now' : 'Upcoming'}: see {brand.name}’s {eventTie.name} offers below →
         </a>
       ) : null}
 
       {brand.status === 'rebranded' && successor ? (
-        <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+        <div className="mb-6 rounded-lg border border-action/30 bg-action/5 p-4 text-sm">
           <strong>{brand.name}</strong> is now <strong>{successor.name}</strong>.{' '}
-          <Link href={`/${successor.slug}/`} className="font-medium text-primary underline">
+          <Link href={`/${successor.slug}/`} className="font-medium text-action underline">
             View the current {successor.name} page →
           </Link>
         </div>
       ) : null}
 
-      {brand.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- static logo asset
-        <img src={brand.logoUrl} alt={`${brand.name} logo`} className="mb-4 h-12 w-auto" />
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">{brand.name} Promo Code &amp; Bonus</h1>
-        <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
+      {/* Brand hero — logo + name + reserved rating slot: the page's identity. */}
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <BrandLogo
+          name={brand.name}
+          slug={brand.slug}
+          logoUrl={brand.logoUrl}
+          logoSquareUrl={brand.logoSquareUrl}
+          className="w-44 shrink-0 ring-1 ring-foreground/10"
+        />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className={ds.pageTitle}>{brand.name} Promo Code &amp; Bonus</h1>
+            <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
+          </div>
+          {/* Reserved rating slot — renders nothing until brand.rating exists. */}
+          <BrandRating rating={cardBrand.rating} reviewCount={cardBrand.reviewCount} className="mt-2" />
+        </div>
       </div>
 
       {/* Admin-authored rich intro (renders above the primary content) */}
@@ -213,8 +226,8 @@ export async function BrandView({ brand }: { brand: Brand }) {
       ) : activeOffers.length ? (
         // Only region-restricted offers and none featured: don't surface a
         // state-specific offer as the national headline — point to state offers.
-        <section id="brand-offers" className="mt-8 scroll-mt-20 rounded-lg border border-primary/30 bg-primary/5 p-4">
-          <p className="text-sm font-medium text-primary">
+        <section id="brand-offers" className="mt-8 scroll-mt-20 rounded-lg border border-action/30 bg-action/5 p-4">
+          <p className="text-sm font-medium text-action">
             {brand.name} offers vary by state — see the offers below and pick your state for the current deal.
           </p>
         </section>
@@ -224,8 +237,8 @@ export async function BrandView({ brand }: { brand: Brand }) {
 
       {rest.length ? (
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">More {brand.name} offers</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">More {brand.name} offers</h2>
+          <div className="grid gap-card sm:grid-cols-2">
             {rest.map((o) => (
               <OfferCard key={o.id} offer={offersForCard(o)} brand={cardBrand} />
             ))}
@@ -243,7 +256,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
       {/* How to Claim */}
       {brand.howToClaimSteps?.length ? (
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">How to claim the {brand.name} offer</h2>
+          <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">How to claim the {brand.name} offer</h2>
           <ol className="ml-1 flex list-inside list-decimal flex-col gap-2 text-sm">
             {brand.howToClaimSteps.map((step, i) => (
               <li key={i}>{step}</li>
@@ -257,11 +270,11 @@ export async function BrandView({ brand }: { brand: Brand }) {
         <section className="mt-10 grid gap-6 sm:grid-cols-2">
           {brand.pros?.length ? (
             <div>
-              <h2 className="mb-3 text-lg font-semibold">Pros</h2>
+              <h2 className="mb-3 font-display text-lg font-semibold tracking-tight">Pros</h2>
               <ul className="flex flex-col gap-2 text-sm">
                 {brand.pros.map((p, i) => (
                   <li key={i} className="flex gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <Check className="mt-0.5 size-4 shrink-0 text-action" />
                     <span>{p}</span>
                   </li>
                 ))}
@@ -270,7 +283,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
           ) : null}
           {brand.cons?.length ? (
             <div>
-              <h2 className="mb-3 text-lg font-semibold">Cons</h2>
+              <h2 className="mb-3 font-display text-lg font-semibold tracking-tight">Cons</h2>
               <ul className="flex flex-col gap-2 text-sm">
                 {brand.cons.map((c, i) => (
                   <li key={i} className="flex gap-2">
@@ -291,18 +304,20 @@ export async function BrandView({ brand }: { brand: Brand }) {
         brandName={brand.name}
       />
 
-      {/* Verdict */}
+      {/* Verdict — surfaced as a highlighted call-out (the money takeaway). */}
       {brand.verdict ? (
         <section className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold">Our verdict</h2>
-          <p className="max-w-3xl leading-relaxed text-muted-foreground">{brand.verdict}</p>
+          <div className={cn(ds.tile, 'border-l-4 border-l-action p-card')}>
+            <p className={cn(ds.eyebrow, 'mb-2 text-action')}>Our verdict</p>
+            <p className="max-w-3xl leading-relaxed text-foreground">{brand.verdict}</p>
+          </div>
         </section>
       ) : null}
 
       {/* Other promotions */}
       {brand.otherPromotions?.length ? (
         <section className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold">Other {brand.name} promotions</h2>
+          <h2 className="mb-3 font-display text-xl font-semibold tracking-tight">Other {brand.name} promotions</h2>
           <ul className="ml-1 flex list-inside list-disc flex-col gap-1.5 text-sm">
             {brand.otherPromotions.map((p, i) => (
               <li key={i}>{p}</li>
@@ -314,7 +329,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
       {/* Deposit options */}
       {depositOptions.length ? (
         <section className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold">Deposit options</h2>
+          <h2 className="mb-3 font-display text-xl font-semibold tracking-tight">Deposit options</h2>
           <ul className="flex flex-wrap gap-2">
             {depositOptions.map((d) => (
               <li key={d}>
@@ -327,7 +342,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
 
       {/* About [Brand] */}
       <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">About {brand.name}</h2>
+        <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">About {brand.name}</h2>
         {brand.fullDescription ? (
           <div className={MARKDOWN_CLASS}>
             <Markdown rehypePlugins={[rehypeSanitize]}>{brand.fullDescription}</Markdown>
@@ -340,10 +355,10 @@ export async function BrandView({ brand }: { brand: Brand }) {
       {/* Related brands from [Company] */}
       {related.length && companyName ? (
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">Related brands from {companyName}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">Related brands from {companyName}</h2>
+          <div className="grid gap-card sm:grid-cols-2 lg:grid-cols-3">
             {related.map((b) => (
-              <Card key={b.slug}>
+              <Card key={b.slug} className={ds.tileHover}>
                 <CardHeader>
                   <CardTitle className="text-base">
                     <Link href={`/${b.slug}/`} className="hover:underline">{b.name}</Link>

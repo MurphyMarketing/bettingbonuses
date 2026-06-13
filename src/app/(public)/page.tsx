@@ -8,6 +8,8 @@ import { eventTimeStatus } from '@/lib/event-time';
 import { FeaturedOfferCard, type FeaturedHomeOffer } from '@/components/home/featured-offer-card';
 import { EventCard, type HomeEvent } from '@/components/home/event-card';
 import { CategoryTile, type CategoryBrand } from '@/components/home/category-tile';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600;
 
@@ -136,19 +138,19 @@ export default async function HomePage() {
     <div className="py-10">
       {/* Hero */}
       <section>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Find today’s best US betting offers</h1>
-        <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+        <h1 className={ds.pageTitle}>Find today’s best US betting offers</h1>
+        <p className={cn(ds.lead, 'mt-3')}>
           Verified sign-up promotions and promo codes from legal US sportsbooks, prediction markets, racebooks, and DFS pick’em apps.
         </p>
 
         {/* Trust strip */}
         <div className="mt-4 inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-secondary px-3.5 py-2 text-sm text-secondary-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="size-4 text-primary" />
+            <ShieldCheck className="size-4 text-action" />
             {recent > 0 ? <><span className="font-semibold">{recent}</span> verified in 14 days</> : 'Verified offers'}
           </span>
-          <span className="inline-flex items-center gap-1.5"><RefreshCw className="size-4 text-primary" />Checked daily</span>
-          <span className="inline-flex items-center gap-1.5"><PenLine className="size-4 text-primary" />Editorial review</span>
+          <span className="inline-flex items-center gap-1.5"><RefreshCw className="size-4 text-action" />Checked daily</span>
+          <span className="inline-flex items-center gap-1.5"><PenLine className="size-4 text-action" />Editorial review</span>
         </div>
 
         {/* Featured offer */}
@@ -165,8 +167,8 @@ export default async function HomePage() {
       {/* Live and upcoming events — renders nothing when there are none */}
       {liveUpcoming.length > 0 ? (
         <section className="mt-12">
-          <h2 className="mb-4 text-xl font-semibold">Live and upcoming events</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">Live and upcoming events</h2>
+          <div className="grid gap-card sm:grid-cols-2 lg:grid-cols-3">
             {liveUpcoming.map((e) => (
               <EventCard key={e.slug} event={e} now={now} />
             ))}
@@ -176,8 +178,8 @@ export default async function HomePage() {
 
       {/* Browse by category — logo tiles */}
       <section className="mt-12">
-        <h2 className="mb-4 text-xl font-semibold">Browse by category</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">Browse by category</h2>
+        <div className="grid gap-card sm:grid-cols-2 lg:grid-cols-4">
           {categoryTiles.map((c) => (
             <CategoryTile key={c.slug} slug={c.slug} label={c.label} brandCount={c.brandCount} brands={c.brands} remaining={c.remaining} />
           ))}
@@ -186,7 +188,7 @@ export default async function HomePage() {
 
       {/* Browse by state — best-covered states first */}
       <section className="mt-12">
-        <h2 className="mb-4 text-xl font-semibold">Browse by state</h2>
+        <h2 className="mb-4 font-display text-xl font-semibold tracking-tight">Browse by state</h2>
         <ul className="flex flex-wrap gap-2">
           {stateRows.map((s) => (
             <li key={s.slug}>

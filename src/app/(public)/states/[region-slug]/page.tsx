@@ -8,6 +8,8 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/offer-card';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -162,14 +164,14 @@ export default async function StatePage({ params }: { params: Params }) {
       <p className="text-sm text-muted-foreground">
         <Link href="/states/" className="hover:underline">States</Link> / {region.name}
       </p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight">
+      <h1 className={cn(ds.pageTitle, 'mt-1')}>
         Best Sports Betting Promo Codes in {region.name}
       </h1>
 
       {/* State intro (admin-authored) */}
       {region.intro ? (
         <div
-          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-action [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(region.intro) }}
         />
       ) : null}
@@ -184,7 +186,7 @@ export default async function StatePage({ params }: { params: Params }) {
               <>
                 , regulated by{' '}
                 {region.regulatorUrl ? (
-                  <a href={region.regulatorUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  <a href={region.regulatorUrl} target="_blank" rel="noopener noreferrer" className="text-action underline">
                     {region.regulator}
                   </a>
                 ) : (
@@ -200,17 +202,17 @@ export default async function StatePage({ params }: { params: Params }) {
 
       {/* Brands by category */}
       <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">Operators live in {region.name}</h2>
+        <h2 className={cn(ds.sectionTitle, 'mb-4')}>Operators live in {region.name}</h2>
         <div className="flex flex-col gap-8">
           {byCategory.map((group) => (
             <div key={group.category}>
               <h3 className="mb-3 text-sm font-medium text-muted-foreground">{CATEGORY_SECTION_LABEL[group.category] ?? group.category}</h3>
 
               {/* All operators in this category, uniform */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-card sm:grid-cols-2 lg:grid-cols-3">
                 {group.brands.map((b) => (
-                  <Card key={b.slug} className="flex flex-col gap-3 p-3">
-                    <BrandLogo name={b.name} slug={b.slug} logoUrl={b.logoUrl} logoSquareUrl={b.logoSquareUrl} />
+                  <Card key={b.slug} className={cn('flex flex-col gap-3 p-3', ds.tileHover)}>
+                    <BrandLogo name={b.name} slug={b.slug} logoUrl={b.logoUrl} logoSquareUrl={b.logoSquareUrl} className="ring-1 ring-foreground/10" />
                     <CardTitle className="text-base">
                       <Link href={`/${b.slug}/${region.slug}/`} className="hover:underline">{b.name}</Link>
                     </CardTitle>
@@ -224,9 +226,9 @@ export default async function StatePage({ params }: { params: Params }) {
 
       {/* Offers */}
       <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">{region.name} betting offers</h2>
+        <h2 className={cn(ds.sectionTitle, 'mb-4')}>{region.name} betting offers</h2>
         {offerRows.length ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-card sm:grid-cols-2">
             {offerRows.map((o) => (
               <OfferCard key={o.id} offer={offerForCard(o)} brand={brandForCard(o)} />
             ))}

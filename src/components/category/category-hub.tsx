@@ -9,6 +9,8 @@ import { BrandLogo } from '@/components/brand/BrandLogo';
 import { RichContent } from '@/components/rich-content';
 import { getPageContent, getPageMeta } from '@/lib/page-content';
 import { metaOrDefault } from '@/lib/meta';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 /**
  * Category hub, rendered at the bare /[category]/ root (e.g. /sportsbooks/).
@@ -70,24 +72,24 @@ export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
 
   return (
     <div className="py-8">
-      <h1 className="text-3xl font-bold tracking-tight">{cfg.h1}</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+      <h1 className={ds.pageTitle}>{cfg.h1}</h1>
+      <p className={cn(ds.lead, 'mt-3')}>
         Current sign-up offers from legal US {cfg.noun} operators. Every offer is checked and dated.
       </p>
 
       {/* Admin-authored rich intro (above the brand grid) */}
       <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-card sm:grid-cols-2 lg:grid-cols-3">
         {categoryBrands.map((b) => (
-          <Card key={b.slug} className="flex flex-col">
+          <Card key={b.slug} className={cn('flex flex-col', ds.tileHover)}>
             <CardHeader>
               <BrandLogo
                 name={b.name}
                 slug={b.slug}
                 logoUrl={b.logoUrl}
                 logoSquareUrl={b.logoSquareUrl}
-                className="mb-2"
+                className="mb-2 ring-1 ring-foreground/10"
               />
               <CardTitle className="text-base">
                 <Link href={`/${b.slug}/`} className="hover:underline">

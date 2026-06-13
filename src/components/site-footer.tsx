@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 type FooterGroup = { heading: string; links: { label: string; href: string }[] };
 
@@ -40,8 +42,8 @@ export function SiteFooter() {
     <footer className="mt-16 border-t">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
-          <p className="text-base font-bold tracking-tight">
-            Betting<span className="text-primary">Bonuses</span>.com
+          <p className="font-display text-base font-bold tracking-tight">
+            Betting<span className="text-action">Bonuses</span>.com
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
             If you or someone you know has a gambling problem, call{' '}
@@ -59,7 +61,7 @@ export function SiteFooter() {
         <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {FOOTER_GROUPS.map((group) => (
             <nav key={group.heading} aria-label={group.heading} className="flex flex-col gap-2">
-              <p className="text-sm font-semibold">{group.heading}</p>
+              <p className={cn(ds.eyebrow, 'mb-1')}>{group.heading}</p>
               {group.links.map((l) => (
                 <Link key={l.href} href={l.href} className="text-sm text-muted-foreground hover:text-foreground">
                   {l.label}

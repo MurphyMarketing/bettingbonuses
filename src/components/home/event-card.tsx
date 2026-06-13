@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LocalDateTime } from '@/components/local-datetime';
 import { daysUntil, type EventTimeStatus } from '@/lib/event-time';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export type HomeEvent = {
   name: string;
@@ -23,9 +25,9 @@ export function EventCard({ event, now }: { event: HomeEvent; now: Date }) {
 
   return (
     <Link href={`/${event.slug}/`} className="group">
-      <Card className="flex h-full flex-col gap-2 p-4 transition-colors hover:bg-muted/50">
+      <Card className={cn('flex h-full flex-col gap-2 p-4', ds.tileHover)}>
         <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold">{event.name}</span>
+          <span className="font-display font-semibold tracking-tight">{event.name}</span>
           <Badge variant={live ? 'default' : 'secondary'}>{statusLabel}</Badge>
         </div>
 
@@ -45,7 +47,7 @@ export function EventCard({ event, now }: { event: HomeEvent; now: Date }) {
           </span>
         ) : null}
 
-        <span className="mt-auto pt-1 text-sm font-medium text-primary group-hover:underline">
+        <span className="mt-auto pt-1 text-sm font-medium text-action group-hover:underline">
           {event.offerCount > 0 ? `${event.offerCount} offer${event.offerCount === 1 ? '' : 's'} →` : 'See event →'}
         </span>
       </Card>

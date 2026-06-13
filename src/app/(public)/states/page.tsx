@@ -6,6 +6,8 @@ import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { RichContent } from '@/components/rich-content';
 import { getPageContent, getPageMeta } from '@/lib/page-content';
 import { metaOrDefault } from '@/lib/meta';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600;
 
@@ -35,8 +37,8 @@ export default async function StatesIndexPage() {
 
   return (
     <div className="py-8">
-      <h1 className="text-3xl font-bold tracking-tight">Sports Betting by State</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+      <h1 className={ds.pageTitle}>Sports Betting by State</h1>
+      <p className={cn(ds.lead, 'mt-3')}>
         Legal sports betting offers vary by state. Pick your state to see which sportsbooks,
         prediction markets, racebooks, and DFS apps are live there — and their current promos.
       </p>

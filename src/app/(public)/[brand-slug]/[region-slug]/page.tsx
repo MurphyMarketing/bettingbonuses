@@ -9,6 +9,8 @@ import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/o
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { categoryLabel } from '@/app/admin/brands/labels';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 export const revalidate = 3600; // ISR: 1 hour
 export const dynamicParams = true;
@@ -172,9 +174,9 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
       {brand.status === 'rebranded' && successor ? (
-        <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+        <div className="mb-6 rounded-lg border border-action/30 bg-action/5 p-4 text-sm">
           <strong>{brand.name}</strong> is now <strong>{successor.name}</strong>.{' '}
-          <Link href={`/${successor.slug}/${region.slug}/`} className="font-medium text-primary underline">
+          <Link href={`/${successor.slug}/${region.slug}/`} className="font-medium text-action underline">
             View the current {successor.name} page in {region.name} →
           </Link>
         </div>
@@ -182,7 +184,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
 
       {/* H1 (custom override or default template) */}
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className={ds.pageTitle}>
           {link.headlineOverride || `${brand.name} Promo Code in ${region.name}`}
         </h1>
         <Badge variant="outline">{categoryLabel(brand.category)}</Badge>
@@ -198,18 +200,18 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
       {/* Custom per brand × state copy */}
       {link.context ? (
         <div
-          className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground [&_a]:text-action [&_a]:underline [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(link.context) }}
         />
       ) : null}
 
       {/* Filtered offers */}
       <section className="mt-8">
-        <h2 className="mb-4 text-xl font-semibold">
+        <h2 className={cn(ds.sectionTitle, 'mb-4')}>
           {brand.name} offers in {region.name}
         </h2>
         {regionalOffers.length ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-card sm:grid-cols-2">
             {regionalOffers.map((o) => (
               <OfferCard key={o.id} offer={offersForCard(o)} brand={cardBrand} />
             ))}
@@ -224,7 +226,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
       {/* Other states */}
       {otherRegions.length ? (
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">Other states where {brand.name} operates</h2>
+          <h2 className={cn(ds.sectionTitle, 'mb-4')}>Other states where {brand.name} operates</h2>
           <StateAvailabilityGrid
             codes={otherRegions.map((r) => r.code)}
             hrefFor={(code) => {

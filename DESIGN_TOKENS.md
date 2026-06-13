@@ -64,6 +64,42 @@ Font-size tokens carry paired line-height / tracking / weight.
 | `ds.bonusBadge` | tinted/bordered bonus-type badge |
 | `ds.amount` / `ds.amountLg` | dominant number (tabular-nums, display font) |
 | `ds.cta` | filled accent CTA, focus ring, arrow nudge |
+| `ds.pageTitle` | page H1 — display font, tight tracking, `sm:text-4xl` |
+| `ds.sectionTitle` | section H2 — display font |
+| `ds.lead` | intro/lead paragraph under a title (`text-lg` muted) |
+| `ds.tile` | static surface for raw `<div>` tiles (ring + ticket radius) |
+| `ds.tileHover` | interactive hover lift for clickable tiles — replaces ad-hoc `hover:bg-muted/50`; add to the shared `<Card>` (which already has bg/ring/radius) |
+
+## Propagation pass — adopted areas
+
+The vocabulary above is now applied beyond the offer card (presentational only):
+
+- **Brand page** (`brand-view.tsx`, `BrandStateAvailability.tsx`): logo+name+rating
+  hero, `pageTitle`/`sectionTitle` headings, the verdict as an accent call-out
+  (`tile` + `border-l-action`), `action` accent throughout, `gap-card` grids.
+- **Hubs** (`category-hub`, `bonus-hub`, `/sports`, `/states` indexes, per-sport
+  and event hubs): `pageTitle` + `lead`, `gap-card` grids, brand/sport tiles on
+  `tileHover`, `action` accent + prose links.
+- **State pages** (`states/[region-slug]`, `[brand-slug]/[region-slug]`):
+  headings, accent, `gap-card`, brand tiles on `tileHover`.
+- **Homepage** (`page.tsx`): `pageTitle`/`lead`, `action` trust strip,
+  `FeaturedOfferCard` rebuilt on the offer-card vocabulary (surface, hairline,
+  bonus badge, `amountLg`, `cta`); `CategoryTile`/`EventCard` on `tileHover` +
+  `action`.
+- **Chrome** (`site-header`, `site-footer`): `font-display` wordmark with the
+  `action` accent; footer group headings as `eyebrow` micro-caps.
+
+### Flagged token gaps (deliberately NOT invented this pass)
+- **Secondary / outline button**: hubs still use the shadcn `Button variant="outline"`
+  (neutral border). No tokenized secondary-action style exists yet — left as-is.
+- **Primary `<Button>` accent**: the shared `Button` `default` variant is still
+  `bg-primary` (slate). It was left untouched to avoid restyling admin; the only
+  filled primary action on the public site is the offer-card/featured `ds.cta`.
+  A tokenized `action` button variant is the natural next addition.
+- **Alert / callout surface**: the RG-resources and "offers vary by state" boxes
+  use one-off `rounded-lg border bg-muted/30` / `bg-action/5`. A shared callout
+  token would replace these.
+- **Table style**: not encountered in these areas; still untokenized.
 
 ## Adoption notes for the propagation pass
 - Swap a distinctive display face in one place: repoint `--font-display` in

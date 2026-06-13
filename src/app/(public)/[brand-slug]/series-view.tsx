@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { activeOfferCards } from '@/lib/offer-cards';
 import { eventTimeStatus, daysUntil } from '@/lib/event-time';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 const SITE_URL = 'https://www.bettingbonuses.com';
 type Series = typeof eventSeries.$inferSelect;
@@ -93,7 +95,7 @@ export async function SeriesView({ series }: { series: Series }) {
       ) : null}
 
       <div className="mt-1 flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">{series.name} betting promo codes</h1>
+        <h1 className={ds.pageTitle}>{series.name} betting promo codes</h1>
         {badge ? <Badge variant={badge.variant}>{badge.label}</Badge> : null}
       </div>
 
@@ -110,7 +112,7 @@ export async function SeriesView({ series }: { series: Series }) {
 
       {series.intro ? (
         <div
-          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_p]:mt-3 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
+          className="mt-4 max-w-2xl leading-relaxed text-muted-foreground [&_a]:text-action [&_a]:underline [&_p]:mt-3 [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-foreground"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(series.intro) }}
         />
       ) : series.description ? (
@@ -120,16 +122,16 @@ export async function SeriesView({ series }: { series: Series }) {
       {sport ? (
         <p className="mt-4 text-sm text-muted-foreground">
           Part of{' '}
-          <Link href={`/sports/${sport.slug}/`} className="font-medium text-primary hover:underline">{sport.name}</Link>
+          <Link href={`/sports/${sport.slug}/`} className="font-medium text-action hover:underline">{sport.name}</Link>
           {' '}— see all {sport.name} promos.
         </p>
       ) : null}
 
       {/* Offers */}
       <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">{series.name} offers</h2>
+        <h2 className={cn(ds.sectionTitle, 'mb-4')}>{series.name} offers</h2>
         {offerCards.length ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-card sm:grid-cols-2">
             {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />)}
           </div>
         ) : (

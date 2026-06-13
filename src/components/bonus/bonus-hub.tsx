@@ -7,6 +7,8 @@ import { RichContent } from '@/components/rich-content';
 import { activeOfferCards } from '@/lib/offer-cards';
 import { getPageContent, getPageMeta } from '@/lib/page-content';
 import { metaOrDefault } from '@/lib/meta';
+import { ds } from '@/design/tokens';
+import { cn } from '@/lib/utils';
 
 type BonusKind = (typeof bonusKindEnum.enumValues)[number];
 
@@ -67,8 +69,8 @@ export async function BonusHub({ bonusHubSlug }: { bonusHubSlug: string }) {
 
   return (
     <div className="py-8">
-      <h1 className="text-3xl font-bold tracking-tight">{cfg.h1}</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+      <h1 className={ds.pageTitle}>{cfg.h1}</h1>
+      <p className={cn(ds.lead, 'mt-3')}>
         Current {cfg.noun} offers from legal US sportsbooks. Every offer is checked and dated.
       </p>
 
@@ -76,7 +78,7 @@ export async function BonusHub({ bonusHubSlug }: { bonusHubSlug: string }) {
       <RichContent html={pc.introBody} className="mt-6 max-w-3xl" />
 
       {offerCards.length ? (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid gap-card sm:grid-cols-2">
           {offerCards.map((c) => (
             <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />
           ))}
