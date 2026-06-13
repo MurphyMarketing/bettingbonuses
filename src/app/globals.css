@@ -46,6 +46,49 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ============================================================
+   * DESIGN-SYSTEM SEED — "The Betting Slip"
+   * Anchored by the shared OfferCard; documented in src/design/tokens.ts
+   * and DESIGN_TOKENS.md. These are ADDITIVE (new utility names — bg-action,
+   * text-amount, rounded-card, p-card …) so they do not restyle the rest of
+   * the site yet. The propagation pass adopts them component-by-component.
+   * ========================================================== */
+
+  /* --- Accent (the single action color: CTAs, focus, "go") --- */
+  --color-action: var(--action);
+  --color-action-foreground: var(--action-foreground);
+  --color-action-hover: var(--action-hover);
+
+  /* --- Bonus-type badge tint (the styled badge, not a gray pill) --- */
+  --color-bonus-tint: var(--bonus-tint);
+  --color-bonus-tint-foreground: var(--bonus-tint-foreground);
+  --color-bonus-tint-border: var(--bonus-tint-border);
+
+  /* --- Type scale (font-size + paired line-height / tracking / weight) --- */
+  --text-eyebrow: 0.6875rem;            /* 11px — micro-caps labels */
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.09em;
+  --text-eyebrow--font-weight: 600;
+  --text-headline: 1.0625rem;           /* 17px — offer headline */
+  --text-headline--line-height: 1.4rem;
+  --text-headline--font-weight: 600;
+  --text-amount: 2rem;                  /* 32px — the dominant number */
+  --text-amount--line-height: 2.125rem;
+  --text-amount--letter-spacing: -0.02em;
+  --text-amount--font-weight: 700;
+  --text-amount-lg: 2.75rem;            /* 44px — featured amount */
+  --text-amount-lg--line-height: 2.75rem;
+  --text-amount-lg--letter-spacing: -0.025em;
+  --text-amount-lg--font-weight: 700;
+
+  /* --- Display font alias: ready to point at a distinctive face later
+   *     without touching any component (currently the sans stack). --- */
+  --font-display: var(--font-geist-sans);
+
+  /* --- Surface radius + spacing rhythm --- */
+  --radius-card: 1rem;                  /* 16px — the ticket corner */
+  --spacing-card: 1.25rem;              /* 20px — p-card / gap-card base unit */
 }
 
 :root {
@@ -82,6 +125,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Design-system seed (light). Action = a vivid, confident azure — brighter
+   * and more chromatic than the muted slate --primary, so the CTA reads as THE
+   * action while staying in the site's blue family. */
+  --action: oklch(0.58 0.18 256);
+  --action-foreground: oklch(0.985 0 0);
+  --action-hover: oklch(0.52 0.185 256);
+  --bonus-tint: oklch(0.962 0.028 256);
+  --bonus-tint-foreground: oklch(0.43 0.13 256);
+  --bonus-tint-border: oklch(0.88 0.05 256);
 }
 
 .dark {
@@ -117,6 +170,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Design-system seed (dark): lift the action color and tint for contrast. */
+  --action: oklch(0.64 0.17 256);
+  --action-foreground: oklch(0.18 0.03 256);
+  --action-hover: oklch(0.70 0.165 256);
+  --bonus-tint: oklch(0.30 0.05 256);
+  --bonus-tint-foreground: oklch(0.84 0.08 256);
+  --bonus-tint-border: oklch(0.42 0.06 256);
 }
 
 @layer base {

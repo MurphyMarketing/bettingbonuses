@@ -86,7 +86,7 @@ export default async function SportHubPage({ params }: { params: Params }) {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: `${sport.name} betting offers`,
-    itemListElement: offerCards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/${c.brandSlug}/`, name: c.offer.headline })),
+    itemListElement: offerCards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/${c.brand.slug}/`, name: c.offer.headline })),
   };
   const jsonLd = JSON.stringify(itemListLd).replace(/</g, '\\u003c');
   const shortDate = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -137,7 +137,7 @@ export default async function SportHubPage({ params }: { params: Params }) {
         <h2 className="mb-4 text-xl font-semibold">{sport.name} offers</h2>
         {offerCards.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brandSlug={c.brandSlug} />)}
+            {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />)}
           </div>
         ) : (
           <p className="text-muted-foreground">No current {sport.name} offers. Check back soon.</p>

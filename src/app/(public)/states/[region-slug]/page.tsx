@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { regions, brandRegions, brands, offers, offerRegions } from '@/db/schema';
 import { Card, CardTitle } from '@/components/ui/card';
-import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/offer-card';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { sanitizeHtml } from '@/lib/sanitize';
 
@@ -91,7 +91,10 @@ export default async function StatePage({ params }: { params: Params }) {
       validFrom: offers.validFrom,
       validTo: offers.validTo,
       lastVerifiedAt: offers.lastVerifiedAt,
+      brandName: brands.name,
       brandSlug: brands.slug,
+      brandLogoUrl: brands.logoUrl,
+      brandLogoSquareUrl: brands.logoSquareUrl,
     })
     .from(offers)
     .innerJoin(brands, eq(offers.brandId, brands.id))
@@ -125,6 +128,13 @@ export default async function StatePage({ params }: { params: Params }) {
     responsibleGamblingDisclaimer: o.responsibleGamblingDisclaimer,
     validTo: o.validTo,
     lastVerifiedAt: o.lastVerifiedAt,
+  });
+
+  const brandForCard = (o: (typeof offerRows)[number]): OfferCardBrand => ({
+    name: o.brandName,
+    slug: o.brandSlug,
+    logoUrl: o.brandLogoUrl,
+    logoSquareUrl: o.brandLogoSquareUrl,
   });
 
   const itemListLd = {
@@ -218,7 +228,7 @@ export default async function StatePage({ params }: { params: Params }) {
         {offerRows.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {offerRows.map((o) => (
-              <OfferCard key={o.id} offer={offerForCard(o)} brandSlug={o.brandSlug} />
+              <OfferCard key={o.id} offer={offerForCard(o)} brand={brandForCard(o)} />
             ))}
           </div>
         ) : (

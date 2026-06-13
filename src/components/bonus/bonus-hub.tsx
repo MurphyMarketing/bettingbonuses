@@ -78,7 +78,7 @@ export async function BonusHub({ bonusHubSlug }: { bonusHubSlug: string }) {
       {offerCards.length ? (
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {offerCards.map((c) => (
-            <OfferCard key={c.offer.id} offer={c.offer} brandSlug={c.brandSlug} />
+            <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />
           ))}
         </div>
       ) : (

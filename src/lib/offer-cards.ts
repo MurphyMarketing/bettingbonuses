@@ -1,12 +1,14 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
 import { offers, brands } from '@/db/schema';
-import type { PublicOffer } from '@/components/offer-card';
+import type { PublicOffer, OfferCardBrand } from '@/components/offer-card';
 
-export type OfferCardRow = { offer: PublicOffer; brandSlug: string };
+export type OfferCardRow = { offer: PublicOffer; brand: OfferCardBrand };
 
 /** Active offers matching `condition`, joined to their brand, priority-sorted —
- *  shaped for <OfferCard>. Used by the sport / series / event hubs. */
+ *  shaped for <OfferCard>. Used by the sport / series / event / bonus-type hubs.
+ *  Selects the brand identity (name + logos) the card now anchors on; the rating
+ *  slot stays unset until a schema field exists. */
 export async function activeOfferCards(condition: SQL | undefined): Promise<OfferCardRow[]> {
   const rows = await db
     .select({
@@ -19,7 +21,10 @@ export async function activeOfferCards(condition: SQL | undefined): Promise<Offe
       responsibleGamblingDisclaimer: offers.responsibleGamblingDisclaimer,
       validTo: offers.validTo,
       lastVerifiedAt: offers.lastVerifiedAt,
+      brandName: brands.name,
       brandSlug: brands.slug,
+      brandLogoUrl: brands.logoUrl,
+      brandLogoSquareUrl: brands.logoSquareUrl,
     })
     .from(offers)
     .innerJoin(brands, eq(offers.brandId, brands.id))
@@ -27,7 +32,12 @@ export async function activeOfferCards(condition: SQL | undefined): Promise<Offe
     .orderBy(desc(offers.priority), desc(offers.lastVerifiedAt));
 
   return rows.map((r) => ({
-    brandSlug: r.brandSlug,
+    brand: {
+      name: r.brandName,
+      slug: r.brandSlug,
+      logoUrl: r.brandLogoUrl,
+      logoSquareUrl: r.brandLogoSquareUrl,
+    },
     offer: {
       id: r.id,
       headline: r.headline,

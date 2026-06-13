@@ -8,7 +8,7 @@ import { db } from '@/db';
 import { brands, companies, offers, offerRegions, authors, eventSeries } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/offer-card';
 import { AuthorByline, type BylineAuthor } from '@/components/author-byline';
 import { BrandStateAvailability } from '@/components/brand/BrandStateAvailability';
 import { RichContent } from '@/components/rich-content';
@@ -164,6 +164,13 @@ export async function BrandView({ brand }: { brand: Brand }) {
     lastVerifiedAt: o.lastVerifiedAt,
   });
 
+  const cardBrand: OfferCardBrand = {
+    name: brand.name,
+    slug: brand.slug,
+    logoUrl: brand.logoUrl,
+    logoSquareUrl: brand.logoSquareUrl,
+  };
+
   return (
     <div className="py-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
@@ -201,7 +208,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
       {hero ? (
         <section id="brand-offers" className="mt-8 scroll-mt-20">
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Featured offer</h2>
-          <OfferCard offer={offersForCard(hero)} brandSlug={brand.slug} featured />
+          <OfferCard offer={offersForCard(hero)} brand={cardBrand} featured />
         </section>
       ) : activeOffers.length ? (
         // Only region-restricted offers and none featured: don't surface a
@@ -220,7 +227,7 @@ export async function BrandView({ brand }: { brand: Brand }) {
           <h2 className="mb-4 text-xl font-semibold">More {brand.name} offers</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {rest.map((o) => (
-              <OfferCard key={o.id} offer={offersForCard(o)} brandSlug={brand.slug} />
+              <OfferCard key={o.id} offer={offersForCard(o)} brand={cardBrand} />
             ))}
           </div>
         </section>

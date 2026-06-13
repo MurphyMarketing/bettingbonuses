@@ -78,7 +78,7 @@ export async function SeriesView({ series }: { series: Series }) {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: `${series.name} betting offers`,
-    itemListElement: offerCards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/${c.brandSlug}/`, name: c.offer.headline })),
+    itemListElement: offerCards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/${c.brand.slug}/`, name: c.offer.headline })),
   };
   const jsonLd = JSON.stringify([sportsEventLd, itemListLd].filter(Boolean)).replace(/</g, '\\u003c');
 
@@ -130,7 +130,7 @@ export async function SeriesView({ series }: { series: Series }) {
         <h2 className="mb-4 text-xl font-semibold">{series.name} offers</h2>
         {offerCards.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brandSlug={c.brandSlug} />)}
+            {offerCards.map((c) => <OfferCard key={c.offer.id} offer={c.offer} brand={c.brand} />)}
           </div>
         ) : (
           <p className="text-muted-foreground">No current {series.name} offers. Check back as the event approaches.</p>

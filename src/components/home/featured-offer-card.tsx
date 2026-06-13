@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { PromoCode } from '@/components/promo-code';
-import { formatUsdCents } from '@/lib/money';
+import { formatBonusAmount } from '@/lib/money';
 import { isStale, formatRelativeTime } from '@/lib/datetime';
 import { bonusKindLabel } from '@/app/admin/offers/labels';
 
@@ -46,7 +46,7 @@ export function FeaturedOfferCard({ offer }: { offer: FeaturedHomeOffer }) {
         <h3 className="text-xl font-bold tracking-tight">{offer.headline}</h3>
 
         {offer.bonusAmountCents != null ? (
-          <p className="text-3xl font-bold">{formatUsdCents(offer.bonusAmountCents)}</p>
+          <p className="text-3xl font-bold">{formatBonusAmount(offer.bonusAmountCents)}</p>
         ) : null}
 
         {offer.code ? (

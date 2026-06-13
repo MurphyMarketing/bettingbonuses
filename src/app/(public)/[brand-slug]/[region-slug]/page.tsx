@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands, brandRegions, offers, offerRegions, regions } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
-import { OfferCard, type PublicOffer } from '@/components/offer-card';
+import { OfferCard, type PublicOffer, type OfferCardBrand } from '@/components/offer-card';
 import { StateAvailabilityGrid } from '@/components/state-availability-grid';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { categoryLabel } from '@/app/admin/brands/labels';
@@ -133,6 +133,13 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
     lastVerifiedAt: o.lastVerifiedAt,
   });
 
+  const cardBrand: OfferCardBrand = {
+    name: brand.name,
+    slug: brand.slug,
+    logoUrl: brand.logoUrl,
+    logoSquareUrl: brand.logoSquareUrl,
+  };
+
   const productLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -204,7 +211,7 @@ export default async function BrandRegionPage({ params }: { params: Params }) {
         {regionalOffers.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {regionalOffers.map((o) => (
-              <OfferCard key={o.id} offer={offersForCard(o)} brandSlug={brand.slug} />
+              <OfferCard key={o.id} offer={offersForCard(o)} brand={cardBrand} />
             ))}
           </div>
         ) : (
