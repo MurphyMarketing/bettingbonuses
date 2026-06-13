@@ -19,8 +19,16 @@ const FOOTER_GROUPS: FooterGroup[] = [
     links: [
       { label: 'About', href: '/about' },
       { label: 'Authors', href: '/authors' },
-      { label: 'Privacy', href: '/privacy' },
       { label: 'Terms', href: '/terms' },
+    ],
+  },
+  {
+    heading: 'Legal',
+    links: [
+      { label: 'Affiliate disclosure', href: '/affiliate-disclosure' },
+      { label: 'Privacy policy', href: '/privacy-policy' },
+      { label: 'Responsible gambling', href: '/responsible-gambling' },
+      { label: 'Contact', href: '/contact' },
     ],
   },
 ];

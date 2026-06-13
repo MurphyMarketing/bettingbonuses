@@ -8,6 +8,7 @@ import { getPublishedArticle, articleMetadata, ArticleView } from './article-vie
 import { getVisibleSeries, seriesMetadata, SeriesView } from './series-view';
 import { CATEGORIES, isCategorySlug, categoryHubMetadata, CategoryHub } from '@/components/category/category-hub';
 import { BONUS_HUBS, isBonusHubSlug, bonusHubMetadata, BonusHub } from '@/components/bonus/bonus-hub';
+import { STATIC_PAGES, isStaticPageSlug, staticPageMetadata, StaticContentPage } from '@/components/legal/static-content-page';
 
 export const revalidate = 3600; // ISR: 1 hour
 export const dynamicParams = true;
@@ -35,6 +36,7 @@ export async function generateStaticParams() {
     ...seriesRows,
     ...Object.keys(CATEGORIES).map((slug) => ({ slug })),
     ...Object.keys(BONUS_HUBS).map((slug) => ({ slug })),
+    ...Object.keys(STATIC_PAGES).map((slug) => ({ slug })),
   ].map((r) => ({ 'brand-slug': r.slug }));
 }
 
@@ -50,6 +52,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (categoryMeta) return categoryMeta;
   const bonusMeta = await bonusHubMetadata(slug);
   if (bonusMeta) return bonusMeta;
+  const staticMeta = await staticPageMetadata(slug);
+  if (staticMeta) return staticMeta;
   return { title: 'Not found' };
 }
 
@@ -68,6 +72,8 @@ export default async function RootSlugPage({ params }: { params: Params }) {
   if (isCategorySlug(slug)) return <CategoryHub categorySlug={slug} />;
 
   if (isBonusHubSlug(slug)) return <BonusHub bonusHubSlug={slug} />;
+
+  if (isStaticPageSlug(slug)) return <StaticContentPage slug={slug} />;
 
   notFound();
 }
