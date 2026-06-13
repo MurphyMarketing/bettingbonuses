@@ -4,7 +4,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { brands, sports, eventSeries } from '@/db/schema';
 import { categoryLabel } from '@/app/admin/brands/labels';
-import { BONUS_KIND_VALUES } from '../schema';
+import { ASSIGNABLE_BONUS_KIND_VALUES } from '../schema';
 import { bulkCreateOffers } from './actions';
 import { BulkCreateForm } from './bulk-create-form';
 
@@ -30,7 +30,7 @@ export default async function BulkCreatePage() {
         sports={sportRows.map((s) => ({ value: String(s.id), label: s.name }))}
         series={seriesRows.map((s) => ({ value: String(s.id), label: s.name, group: s.sportName ?? 'Other' }))}
         brands={brandRows.map((b) => ({ id: b.id, name: b.name, category: b.category ? categoryLabel(b.category) : '—' }))}
-        bonusKinds={BONUS_KIND_VALUES}
+        bonusKinds={ASSIGNABLE_BONUS_KIND_VALUES}
         action={bulkCreateOffers}
       />
     </main>

@@ -11,7 +11,7 @@ import { isStale, formatRelativeTime, toDatetimeLocalInput } from '@/lib/datetim
 import { updateOffer, softDeleteOffer, verifyOffer } from '../../actions';
 import { OfferForm, type OfferFormValues } from '../../offer-form';
 import { loadOptions } from '../../new/page';
-import { BONUS_KIND_VALUES, USER_SEGMENT_VALUES, OFFER_STATUS_VALUES } from '../../schema';
+import { ASSIGNABLE_BONUS_KIND_VALUES, USER_SEGMENT_VALUES, OFFER_STATUS_VALUES } from '../../schema';
 
 export const metadata: Metadata = { title: 'Edit offer', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -95,7 +95,7 @@ export default async function EditOfferPage({ params }: { params: Promise<{ id: 
         sports={options.sports}
         regions={options.regions}
         selectedRegionIds={regionRows.map((r) => String(r.regionId))}
-        bonusKinds={BONUS_KIND_VALUES}
+        bonusKinds={ASSIGNABLE_BONUS_KIND_VALUES}
         userSegments={USER_SEGMENT_VALUES}
         statuses={OFFER_STATUS_VALUES}
         values={values}

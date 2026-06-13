@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { offers, brands, sports, eventSeries } from '@/db/schema';
-import { BONUS_KIND_VALUES } from '../schema';
+import { BONUS_KIND_VALUES, ASSIGNABLE_BONUS_KIND_VALUES } from '../schema';
 
 export type BulkState = { error?: string };
 
@@ -25,7 +25,7 @@ export async function bulkCreateOffers(_prev: BulkState, fd: FormData): Promise<
   if (!Number.isInteger(targetId) || targetId <= 0) return { error: 'Select a target.' };
   if (!brandIds.length) return { error: 'Select at least one brand.' };
   if (!template) return { error: 'Enter a headline template.' };
-  if (!(BONUS_KIND_VALUES as readonly string[]).includes(bonusKind)) return { error: 'Choose a bonus type.' };
+  if (!ASSIGNABLE_BONUS_KIND_VALUES.includes(bonusKind)) return { error: 'Choose a bonus type.' };
 
   // Validate the target exists; capture the event's occurrence end for valid-to.
   let eventEndsAt: Date | null = null;

@@ -5,7 +5,7 @@ import { db } from '@/db';
 import { brands, eventSeries, regions, sports } from '@/db/schema';
 import { createOffer } from '../actions';
 import { OfferForm, type OfferFormValues } from '../offer-form';
-import { BONUS_KIND_VALUES, USER_SEGMENT_VALUES, OFFER_STATUS_VALUES } from '../schema';
+import { ASSIGNABLE_BONUS_KIND_VALUES, USER_SEGMENT_VALUES, OFFER_STATUS_VALUES } from '../schema';
 
 export const metadata: Metadata = { title: 'New offer', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -68,7 +68,7 @@ export default async function NewOfferPage({
         sports={options.sports}
         regions={options.regions}
         selectedRegionIds={[]}
-        bonusKinds={BONUS_KIND_VALUES}
+        bonusKinds={ASSIGNABLE_BONUS_KIND_VALUES}
         userSegments={USER_SEGMENT_VALUES}
         statuses={OFFER_STATUS_VALUES}
         values={values}
