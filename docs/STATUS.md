@@ -1,6 +1,6 @@
 # STATUS.md — BettingBonuses.com
 
-**The living file.** What's shipped, what's in flight, what's undecided. A new chat reads this after VISION and ARCHITECTURE to learn where the build actually is. Where this doc and the repo disagree, the repo wins — and this file gets corrected, not the repo. Last reconciled against the repo at commit `84dd0c4`.
+**The living file.** What's shipped, what's in flight, what's undecided. A new chat reads this after VISION and ARCHITECTURE to learn where the build actually is. Where this doc and the repo disagree, the repo wins — and this file gets corrected, not the repo. Last reconciled against the repo at commit `ece8d3b`.
 
 > The **Shipped** log below is ground truth from `git log` (authored by Claude Code, not chat memory). The **Repo reconciliation** section records places where the working narrative was ahead of the repo as of `84dd0c4` — keep each item until it's resolved.
 
@@ -34,12 +34,19 @@
 - `40084da/0c9cfc5/7092e75/b28aa24/ea577dd` national-only featured offer + national/state separation + per-brand offers admin
 - `90faf0b→2635ce5` meta-title/description overrides (CP1–3)
 - `cdaeced+a6f5853` 6 bonus-type hubs + legal pages · `08d4cbd+a7f3db6` free_bet/free_play removal (non-destructive + destructive enum recreate)
-- `8fb27cc` OfferCard redesign + design-token seed · `84dd0c4` token propagation pass — **HEAD, 1 ahead of origin, unpushed** (see reconciliation #3)
+- `8fb27cc` OfferCard redesign + design-token seed · `84dd0c4` token propagation pass (see reconciliation #3)
+
+**Per-market state facts (Option B) — committed, unpushed**
+- `72daf87` CP1 migration (`market_legal_status` enum + 8 per-market columns on regions; sportsbook backfill) · `aaf2cb8` CP2 admin per-market status/min-age grid · `92f55c5` CP3 public per-market table · `89953b8` add `retail_only` enum value (+ labels) · `ece8d3b` authoritative per-market import (51 states; 0 unmatched)
+- `198a74a` category-hub brand-card logo + name link to brand page (**closes reconciliation #2**)
+- `a737bbc` docs orientation layer (this `/docs`)
+
+> **Unpushed stack (origin..HEAD), oldest→newest:** `84dd0c4` → `a737bbc` → `72daf87` → `aaf2cb8` → `92f55c5` → `198a74a` → `89953b8` → `ece8d3b` (+ this STATUS commit). Ships together after owner localhost review of the token-propagation visual change.
 
 ## In flight / not yet on origin
 - **Sports per-sport prerender (Option A)** — approved, *not applied*. `/sports/[sport-slug]` still filters eventless sports out of `generateStaticParams` (they're SSR-on-demand). Reopens the pooler-`ENOTFOUND` 500 risk on thin sport pages. Likely the first sprint after the docs commit. (reconciliation #1)
-- **Category-hub stretched-link fix** — approved, *not applied*; only the button links today. (reconciliation #2)
-- **Token propagation `84dd0c4`** — committed locally, *unpushed*, 1 ahead of origin. Foundational-visual change, so it sits at the push-review gate by design. Staging/Vercel does not reflect it yet; any visual QA right now is on the pre-propagation tree. Decision needed: review on localhost, then push. (reconciliation #3)
+- **Token propagation `84dd0c4`** — committed locally, *unpushed* (now the bottom of an 8-commit unpushed stack). Foundational-visual change, so it sits at the push-review gate by design. Staging/Vercel does not reflect it yet; any visual QA right now is on the pre-propagation tree. Decision needed: review on localhost, then push the whole stack. (reconciliation #3)
+- **Per-market state facts (Option B)** — fully built + data imported, committed, *unpushed* (rides the same stack). Owner localhost review: admin per-market grid + public per-market table + a `retail_only`/"Not offered" state. ✓ category-hub clickable-card resolved (reconciliation #2).
 
 ## Open decisions
 - **Rating system shape** — composite sub-scores → displayed overall + written rationale, vs. a single score + rationale. Leaning **composite**; chat recommends composite **+ `AggregateRating` schema** (fills the reserved `BrandRating` slot on the OfferCard). This is the VISION-stated moat, so treat it as core strategy, not polish.
@@ -47,7 +54,7 @@
 ## Repo reconciliation (narrative vs repo @ `84dd0c4`, from ARCHITECTURE §7)
 Keep each item until resolved. The first three also appear under In flight above.
 1. **Sports per-sport prerender not applied** — Option A queued, not live. Reliability/SEO. → In flight.
-2. **Clickable-card fix not applied** — only the button links today. UX. → In flight.
+2. ~~**Clickable-card fix not applied** — only the button links today.~~ **RESOLVED** by `198a74a`: category-hub brand-card logo + name now link to the brand page via sibling links (logo `aria-hidden`+`tabIndex=-1` to avoid duplicate AT links). Deliberately not a whole-card stretched link (would nest anchors).
 3. **`84dd0c4` unpushed** — local on main, 1 ahead of origin. → In flight, awaiting push-review.
 4. **`/privacy` (static file) duplicates `/privacy-policy` (page_content)** — two privacy routes. Resolve via the cutover redirect map (`/privacy → /privacy-policy`). → Backlog #3.
 5. **`output: 'standalone'` missing** — CLAUDE.md claims it; `next.config.ts` doesn't set it. Moot on Vercel, required before any Sevalla move. → Fix the CLAUDE.md line (done in this docs commit).
@@ -60,6 +67,7 @@ Keep each item until resolved. The first three also appear under In flight above
 4. **DB-resilience pass** — harden `proxy.ts` `getActiveRedirects` + SSR fetches against pooler blips.
 5. **Structured-data + sitemap sprint** — close reconciliation #6: JSON-LD on articles/hubs/homepage; add hubs + sport/event pages to the sitemap.
 6. **Roadmap reconciliation** — full planned roadmap checked against the live WP site.
+7. **Regulator URL verification** — the per-market import set regulator *names* for ~43 states but only **NJ + NY** have verified `regulator_url`s; the rest are blank. Needs a URL-verification pass to populate the remaining links (don't guess URLs — verify each).
 
 ## QA backlog (owner — auth-gated / visual; chat and Claude Code can't do these)
 - Disclaimer per-surface check — **compliance gate**; nothing goes live until this passes.
