@@ -28,6 +28,15 @@ const CATEGORY_SECTION_LABEL: Record<string, string> = {
   dfs: 'DFS',
 };
 
+// Humanized labels for the per-market legal-status table (market_legal_status enum).
+const MARKET_STATUS_LABEL: Record<string, string> = {
+  legal: 'Legal',
+  not_yet_live: 'Legal — not yet live',
+  illegal: 'Illegal',
+  unregulated: 'Unregulated',
+  contested: 'Available — contested',
+};
+
 export async function generateStaticParams() {
   // Only regions that actually have an active brand operating.
   const rows = await db
@@ -115,6 +124,15 @@ export default async function StatePage({ params }: { params: Params }) {
     ? region.bettingLegalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : null;
 
+  // Per-market legal status + minimum age. All four markets are always shown; a
+  // null status renders "Not offered" and a null age renders "—".
+  const marketFacts = [
+    { label: 'Sportsbook', status: region.sportsbookStatus, minAge: region.sportsbookMinAge },
+    { label: 'Prediction', status: region.predictionStatus, minAge: region.predictionMinAge },
+    { label: 'DFS', status: region.dfsStatus, minAge: region.dfsMinAge },
+    { label: 'Racing', status: region.racingStatus, minAge: region.racingMinAge },
+  ];
+
   const byCategory = CATEGORY_ORDER.map((cat) => ({
     category: cat,
     brands: brandRows.filter((b) => b.category === cat),
@@ -199,6 +217,33 @@ export default async function StatePage({ params }: { params: Params }) {
         ) : null}
         Compare current sign-up offers from every operator live in {region.name}.
       </p>
+
+      {/* Legal status by market */}
+      <section className="mt-8">
+        <h2 className={cn(ds.sectionTitle, 'mb-3')}>{region.name} legal status by market</h2>
+        <div className="max-w-xl overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+                <th scope="col" className="px-3 py-2">Market</th>
+                <th scope="col" className="px-3 py-2">Status</th>
+                <th scope="col" className="px-3 py-2">Min age</th>
+              </tr>
+            </thead>
+            <tbody>
+              {marketFacts.map((m) => (
+                <tr key={m.label} className="border-b last:border-b-0">
+                  <th scope="row" className="px-3 py-2 text-left font-medium text-foreground">{m.label}</th>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {m.status ? MARKET_STATUS_LABEL[m.status] ?? m.status : 'Not offered'}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{m.minAge != null ? `${m.minAge}+` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* Brands by category */}
       <section className="mt-10">
