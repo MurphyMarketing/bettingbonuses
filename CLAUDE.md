@@ -1,5 +1,7 @@
 # BettingBonuses.com — Claude Code Project Context
 
+> **Orientation layer:** see `/docs`. Read order for a new session: VISION → ARCHITECTURE → STATUS → WORKFLOW. The repo + git log + this file are authoritative; `docs/STATUS.md` is the living file, updated at the end of any session that ships or decides something.
+
 ## What this project is
 
 A rebuild of BettingBonuses.com, an existing US gambling-affiliate site that lost
@@ -41,7 +43,7 @@ are the product.
 
 ## Tech stack — DO NOT deviate without discussion
 
-- **Next.js 16 (App Router) + TypeScript** — standalone output mode (portable to any Node host). Scaffolded via `create-next-app@latest` on 2026-06-08, which resolved to 16.2.7. Turbopack is the default dev/build bundler in 16; this is a build-time tool only and does not affect Node-host portability or the no-edge-runtime rule.
+- **Next.js 16 (App Router) + TypeScript** — Scaffolded via `create-next-app@latest` on 2026-06-08, which resolved to 16.2.7. Turbopack is the default dev/build bundler in 16; this is a build-time tool only and does not affect Node-host portability or the no-edge-runtime rule. NOTE: `next.config.ts` does **not** currently set `output: 'standalone'`. That's moot on Vercel, but standalone output must be added before any move to a generic Node host (Sevalla/Kinsta).
 - **PostgreSQL via Supabase** — standard Postgres, accessed via Drizzle ORM with the raw connection string. **Do NOT use `@supabase/supabase-js`**; that ties us to PostgREST conventions and blocks future migration.
 - **Drizzle ORM + drizzle-kit** — schema in TypeScript, reviewable SQL migrations
 - **Auth.js (NextAuth) v5** with Drizzle adapter — admin auth only, credentials provider. **Do NOT use Supabase Auth.** Standard `users` table in the public schema; Phase 1 has 1–3 admin users, no need for Supabase's auth features, and we avoid an auth-migration headache later.
