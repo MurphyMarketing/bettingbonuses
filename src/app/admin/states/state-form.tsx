@@ -24,6 +24,7 @@ export const MARKET_STATUS_OPTIONS = [
   { value: 'illegal', label: 'Illegal' },
   { value: 'unregulated', label: 'Unregulated' },
   { value: 'contested', label: 'Available — contested' },
+  { value: 'retail_only', label: 'Retail only (in-person)' },
 ];
 
 export type StateValues = {

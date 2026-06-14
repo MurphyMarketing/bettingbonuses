@@ -1,0 +1,1 @@
+ALTER TYPE "public"."market_legal_status" ADD VALUE 'retail_only';

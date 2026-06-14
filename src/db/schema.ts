@@ -74,6 +74,7 @@ export const marketLegalStatusEnum = pgEnum('market_legal_status', [
   'illegal',       // not permitted
   'unregulated',   // operating without a clear legal framework
   'contested',     // available but legally challenged / in dispute
+  'retail_only',   // legal in-person/retail only — no statewide online
 ]);
 
 /* ============================================================

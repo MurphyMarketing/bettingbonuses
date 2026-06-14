@@ -35,6 +35,7 @@ const MARKET_STATUS_LABEL: Record<string, string> = {
   illegal: 'Illegal',
   unregulated: 'Unregulated',
   contested: 'Available — contested',
+  retail_only: 'Retail only',
 };
 
 export async function generateStaticParams() {
