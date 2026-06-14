@@ -12,7 +12,7 @@
  */
 import {
   pgTable, pgEnum, serial, text, varchar, timestamp, boolean,
-  integer, jsonb, uniqueIndex, index, primaryKey, customType, check,
+  integer, smallint, jsonb, uniqueIndex, index, primaryKey, customType, check,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -65,6 +65,16 @@ export const userSegmentEnum = pgEnum('user_segment', [
 
 export const articleCategoryEnum = pgEnum('article_category', ['guide', 'news', 'comparison']);
 export const articleStatusEnum = pgEnum('article_status', ['draft', 'published', 'archived']);
+
+// Per-market legal status on regions. Legality is per-market (a state can have
+// legal DFS but no legal sportsbook), so each market gets its own status column.
+export const marketLegalStatusEnum = pgEnum('market_legal_status', [
+  'legal',         // live and available to bet
+  'not_yet_live',  // legalized but not yet launched
+  'illegal',       // not permitted
+  'unregulated',   // operating without a clear legal framework
+  'contested',     // available but legally challenged / in dispute
+]);
 
 /* ============================================================
  * COMPANIES — informational entity for cross-brand relatedness
@@ -162,7 +172,23 @@ export const regions = pgTable('regions', {
 
   // Legality context for content rendering
   bettingLegalDate: timestamp('betting_legal_date', { withTimezone: true }),
+  // DEPRECATED: single state-wide legal status (superseded by the per-market
+  // columns below). Left in place; destructive cleanup deferred.
   bettingLegalStatus: text('betting_legal_status'),            // 'legal_live', 'legal_pending', 'illegal', 'tribal_only'
+
+  // Per-market legal status + minimum age (all nullable; null = not offered /
+  // unknown). Markets: sportsbook, prediction, dfs, racing. `regulator` below is
+  // the single state gaming commission; the prediction-market regulator (CFTC)
+  // is a site-wide constant, not per-state.
+  sportsbookStatus: marketLegalStatusEnum('sportsbook_status'),
+  predictionStatus: marketLegalStatusEnum('prediction_status'),
+  dfsStatus: marketLegalStatusEnum('dfs_status'),
+  racingStatus: marketLegalStatusEnum('racing_status'),
+  sportsbookMinAge: smallint('sportsbook_min_age'),
+  predictionMinAge: smallint('prediction_min_age'),
+  dfsMinAge: smallint('dfs_min_age'),
+  racingMinAge: smallint('racing_min_age'),
+
   regulator: text('regulator'),                                // regulator name, e.g. "Missouri Gaming Commission"
   regulatorUrl: text('regulator_url'),                         // link to the state regulator
   intro: text('intro'),                                        // state-level intro (HTML, sanitized on render)

@@ -134,6 +134,13 @@
       "when": 1781377310960,
       "tag": "0018_remove_free_bet_free_play",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781406827928,
+      "tag": "0019_modern_silver_fox",
+      "breakpoints": true
     }
   ]
 }
