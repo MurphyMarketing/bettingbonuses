@@ -84,15 +84,29 @@ export async function CategoryHub({ categorySlug }: { categorySlug: string }) {
         {categoryBrands.map((b) => (
           <Card key={b.slug} className={cn('flex flex-col', ds.tileHover)}>
             <CardHeader>
-              <BrandLogo
-                name={b.name}
-                slug={b.slug}
-                logoUrl={b.logoUrl}
-                logoSquareUrl={b.logoSquareUrl}
-                className="mb-2 ring-1 ring-foreground/10"
-              />
+              {/* Logo links to the brand page too. It's redundant with the name
+                  link below, so it's hidden from AT + removed from tab order to
+                  avoid emitting two identical adjacent links; mouse users can
+                  still click it. */}
+              <Link
+                href={`/${b.slug}/`}
+                aria-hidden
+                tabIndex={-1}
+                className="mb-2 block rounded-md transition-opacity hover:opacity-90"
+              >
+                <BrandLogo
+                  name={b.name}
+                  slug={b.slug}
+                  logoUrl={b.logoUrl}
+                  logoSquareUrl={b.logoSquareUrl}
+                  className="ring-1 ring-foreground/10"
+                />
+              </Link>
               <CardTitle className="text-base">
-                <Link href={`/${b.slug}/`} className="hover:underline">
+                <Link
+                  href={`/${b.slug}/`}
+                  className="rounded-sm hover:text-action hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action"
+                >
                   {b.name}
                 </Link>
               </CardTitle>
