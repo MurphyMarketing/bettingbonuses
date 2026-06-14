@@ -19,13 +19,19 @@ export default async function EditStatePage({ params }: { params: Promise<{ stat
   const [region] = await db.select().from(regions).where(eq(regions.slug, stateSlug)).limit(1);
   if (!region) notFound();
 
+  const ageStr = (n: number | null) => (n != null ? String(n) : '');
   const values: StateValues = {
     intro: region.intro ?? '',
     regulator: region.regulator ?? '',
     regulatorUrl: region.regulatorUrl ?? '',
     problemGamblingHotline: region.problemGamblingHotline ?? '',
-    bettingLegalStatus: region.bettingLegalStatus ?? '',
     legalSince: toDateInput(region.bettingLegalDate),
+    markets: {
+      sportsbook: { status: region.sportsbookStatus ?? '', minAge: ageStr(region.sportsbookMinAge) },
+      prediction: { status: region.predictionStatus ?? '', minAge: ageStr(region.predictionMinAge) },
+      dfs: { status: region.dfsStatus ?? '', minAge: ageStr(region.dfsMinAge) },
+      racing: { status: region.racingStatus ?? '', minAge: ageStr(region.racingMinAge) },
+    },
   };
 
   return (
